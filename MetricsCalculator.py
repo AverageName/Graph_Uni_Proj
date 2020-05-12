@@ -20,7 +20,11 @@ class MetricsCalculator():
         self.root = ET.parse(path_to_osm).getroot()
         self.weights = {}
         self.nodes = []
-        self.inf_objs = []
+        self.inf_objs = [4353602429, 411827206, 469191096, 433569978, 241927948, 220628145, 192290378, 475876249,
+                         4346949771, 1298014697, 456682436, 1628030509, 4353588566, 175060062, 192073549, 4355578113,
+                         4347321633, 412537658, 1412634107, 176134383, 192127240, 1185494724]
+        self.chosen_objs = []
+        self.chosen_inf_obj = 0
         for obj in self.inf_objs:
             self.weights[obj] = random.random() + 1
         for obj in self.graph.adj.keys():
@@ -46,9 +50,10 @@ class MetricsCalculator():
             "fwd_bwd_inf": partial(distances_fwd_bwd, self.graph.adj, self.inf_objs, self.objs, self.weights)
         }
 
-    def crop_and_save_graph(self):
-        fig, ax = ox.plot_graph(self.graph, save=True, show=False, filename='Ekb_graph', file_format='png',
-                                node_alpha=0, edge_color='b', edge_linewidth=0.7)
+    def crop_and_save_graph(self, save=False):
+        if save:
+            fig, ax = ox.plot_graph(self.graph, save=True, show=False, filename='Ekb_graph', file_format='png',
+                                    node_alpha=0, edge_color='b', edge_linewidth=0.7)
         ox.core.remove_isolated_nodes(self.graph)
         removing_nodes = []
         for i in self.graph.nodes:
@@ -66,8 +71,10 @@ class MetricsCalculator():
 
         self.graph.remove_nodes_from(removing_nodes)
         self.update_nodes_list()
-        fig, ax = ox.plot_graph(self.graph, save=True, show=False, filename='Ekb_graph_cropped',
-                                file_format='png', node_alpha=0, edge_color='b', edge_linewidth=0.7)
+
+        if save:
+            fig, ax = ox.plot_graph(self.graph, save=True, show=False, filename='Ekb_graph_cropped',
+                                    file_format='png', node_alpha=0, edge_color='b', edge_linewidth=0.7)
 
     def set_inf_objs(self, objs):
         min_dists = [float("inf") for _ in range(len(objs))]
@@ -132,7 +139,7 @@ class MetricsCalculator():
             if dist < min_:
                 min_ = dist
                 min_id = obj
-        return (min_, min_id)
+        return min_, min_id
 
     #     def min_weight_tree(self) -> tuple:
     #         distances, preds = self.func_dict_distances['fwd_inf']()
@@ -195,7 +202,7 @@ class MetricsCalculator():
                 for vertex in tree_dict.keys():
                     csv_writer.writerow([str(vertex), ','.join(str(idx) for idx in tree_dict[vertex])])
 
-        return (sum_, routes_list)
+        return sum_, routes_list
 
     def write_csv(self, filename, rows):
         csv_file = open(os.path.join('./csv', filename), 'w')
@@ -263,10 +270,10 @@ class MetricsCalculator():
                     rows.append(('', str(j + 1), ','.join(str(node) for node in history[i][j])))
             self.write_csv('clusters.csv', rows)
 
-        return (clusters, history)
+        return clusters, history
 
     def dendrogram(self, clusters, history):
-        objs = self.chosen_objs
+        # objs = self.chosen_objs
         fig, ax = plt.subplots()
         dict_ = {}
         for i in range(len(clusters[0])):
@@ -290,7 +297,7 @@ class MetricsCalculator():
         inf_obj = self.chosen_inf_obj
         objs = self.chosen_objs
         obj_centroids = []
-        centroid_trees = []
+        # centroid_trees = []
         all_routes = []
         centroid_nodes = []
         number = 1
@@ -327,7 +334,9 @@ class MetricsCalculator():
         self.centroids = obj_centroids
         self.save_tree_plot(routes, [self.graph.nodes[inf_obj]], name, mode='centroids')
 
-    def save_tree_plot(self, routes_list, blue_nodes, name, mode='objs'):
+        return sum_
+
+    def save_tree_plot(self, routes_list, blue_nodes, name):
         fig, ax = ox.plot.plot_graph_routes(self.graph, routes_list, show=False, close=False, node_alpha=0,
                                             edge_color='lightgray', edge_alpha=1, edge_linewidth=0.8,
                                             route_color='#00cc66', route_linewidth=0.8, route_alpha=1,
@@ -344,7 +353,7 @@ class MetricsCalculator():
                 text = str(i + 1)
             ax.annotate(xy=(node['x'], node['y']), s=text, size=4, xytext=(node['x'] + 0.0025, node['y']))
         ox.plot.save_and_show(fig, ax, save=True, show=False, filename=name,
-                              file_format='png', close=True, dpi=600, axis_off=True)
+                              file_format='png', close=True, dpi=200, axis_off=True)
 
     def save_adjacency_matrix(self, filename: str):
         self.df = nx.to_pandas_adjacency(self.graph, dtype=np.uint8)
@@ -378,13 +387,15 @@ class MetricsCalculator():
                 ax.scatter(node['x'], node['y'], c=colors[i], s=10, zorder=10)
                 ax.annotate(xy=(node['x'], node['y']), s=str(elem), size=4, xytext=(node['x'] + 0.0025, node['y']))
         ox.plot.save_and_show(fig, ax, save=True, show=is_show, filename=name,
-                              file_format='png', close=True, dpi=600, axis_off=True)
+                              file_format='png', close=True, dpi=200, axis_off=True)
 
     def work_with_clusters(self, history, amount):
         clusters = history[len(history) - amount]
         self.save_clusters(clusters)
-        self.work_with_centroids(clusters, write=True)
+        sum_ = self.work_with_centroids(clusters, write=True)
         print(str(amount) + ' clusters', clusters)
+
+        return sum_
 
     def second_part(self):
         self.save_chosen_objs_to_csv()
@@ -395,9 +406,11 @@ class MetricsCalculator():
         clusters, history = self.objs_into_clusters(1, write=True)
         self.dendrogram(clusters, history)
 
-        self.work_with_clusters(history, 2)
-        self.work_with_clusters(history, 3)
-        self.work_with_clusters(history, 5)
+        cs_2 = self.work_with_clusters(history, 2)
+        cs_3 = self.work_with_clusters(history, 3)
+        cs_5 = self.work_with_clusters(history, 5)
+
+        return cs_2, cs_3, cs_5
 
     def set_objs(self, n):
         objs = []
@@ -421,6 +434,7 @@ class MetricsCalculator():
     def set_inf_obj(self, num):
         if num >= 0 and num < len(self.inf_objs):
             self.chosen_inf_obj = self.inf_objs[num]
+
 
 if __name__ == "__main__":
     print("hello world")
