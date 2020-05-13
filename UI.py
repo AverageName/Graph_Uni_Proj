@@ -4,6 +4,8 @@ from tkinter import messagebox
 from PIL import ImageTk, Image
 from functools import partial
 from MetricsCalculator import MetricsCalculator
+import threading
+import time
 
 
 class App:
@@ -81,9 +83,11 @@ class App:
         inf_obj_i = int(self.inf_index.get())
         self.mc.set_objs(n)
         self.mc.set_inf_obj(inf_obj_i)
-        cs_2, cs_3, cs_5 = self.mc.second_part()
-        self.result = "2 centroids tree: {}\n3 centroids tree: {}\n5 centroids tree: {}".format(cs_2, cs_3, cs_5)
-        self.set_image('routes_to_random_inf')
+        # cs_2, cs_3, cs_5 = self.mc.second_part()
+        res = self.mc.second_part()
+        # self.result = "2 centroids tree: {}\n3 centroids tree: {}\n5 centroids tree: {}".format(cs_2, cs_3, cs_5)
+        self.result = "res: {}".format(res)
+        # self.set_image('routes_to_random_inf')
         messagebox.showinfo('result', self.result)
 
     def start_loop(self):
@@ -92,6 +96,13 @@ class App:
 
 m = MetricsCalculator('./Ekb.osm')
 m.crop_and_save_graph()
+
+# start = time.time()
+# m.set_objs(5)
+# m.set_inf_obj(3)
+# res = m.second_part()
+# print(time.time() - start)
+# print(res)
 
 app = App(m)
 app.start_loop()

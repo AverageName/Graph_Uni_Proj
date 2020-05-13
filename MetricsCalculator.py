@@ -8,6 +8,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import csv
+import threading
+import time
 
 from utils.utils import *
 
@@ -20,6 +22,7 @@ class MetricsCalculator():
         self.root = ET.parse(path_to_osm).getroot()
         self.weights = {}
         self.nodes = []
+        self.clusters_results = {}
         self.inf_objs = [4353602429, 411827206, 469191096, 433569978, 241927948, 220628145, 192290378, 475876249,
                          4346949771, 1298014697, 456682436, 1628030509, 4353588566, 175060062, 192073549, 4355578113,
                          4347321633, 412537658, 1412634107, 176134383, 192127240, 1185494724]
@@ -71,6 +74,8 @@ class MetricsCalculator():
 
         self.graph.remove_nodes_from(removing_nodes)
         self.update_nodes_list()
+        inf_objs_set = set(self.inf_objs)
+        self.objs = list(filter(lambda x: x not in inf_objs_set, self.nodes))
 
         if save:
             fig, ax = ox.plot_graph(self.graph, save=True, show=False, filename='Ekb_graph_cropped',
@@ -327,12 +332,11 @@ class MetricsCalculator():
             number += 1
 
         name = str(len(clusters)) + '_clusters_trees'
-        self.save_tree_plot(all_routes, centroid_nodes, name, mode='centroids')
+        self.save_tree_plot(all_routes, centroid_nodes, name)
 
         name = str(len(clusters)) + '_centroids_tree'
         sum_, routes = self.list_to_obj_tree(obj_centroids, inf_obj, './csv/' + name + '.csv')
-        self.centroids = obj_centroids
-        self.save_tree_plot(routes, [self.graph.nodes[inf_obj]], name, mode='centroids')
+        self.save_tree_plot(routes, [self.graph.nodes[inf_obj]], name)
 
         return sum_
 
@@ -394,7 +398,7 @@ class MetricsCalculator():
         self.save_clusters(clusters)
         sum_ = self.work_with_centroids(clusters, write=True)
         print(str(amount) + ' clusters', clusters)
-
+        self.clusters_results[amount] = sum_
         return sum_
 
     def second_part(self):
@@ -405,12 +409,24 @@ class MetricsCalculator():
 
         clusters, history = self.objs_into_clusters(1, write=True)
         self.dendrogram(clusters, history)
+        # cs_2 = self.work_with_clusters(history, 2)
+        # cs_3 = self.work_with_clusters(history, 3)
+        # cs_5 = self.work_with_clusters(history, 5)
+        thread_2 = threading.Thread(target=self.work_with_clusters, args=(history, 2))
+        thread_2.setDaemon(True)
+        thread_3 = threading.Thread(target=self.work_with_clusters, args=(history, 3))
+        thread_3.setDaemon(True)
+        thread_5 = threading.Thread(target=self.work_with_clusters, args=(history, 5))
+        thread_5.setDaemon(True)
+        thread_2.start()
+        thread_3.start()
+        thread_5.start()
+        thread_2.join()
+        thread_3.join()
+        thread_5.join()
 
-        cs_2 = self.work_with_clusters(history, 2)
-        cs_3 = self.work_with_clusters(history, 3)
-        cs_5 = self.work_with_clusters(history, 5)
-
-        return cs_2, cs_3, cs_5
+        # return self.clusters_results
+        # return cs_2, cs_3, cs_5
 
     def set_objs(self, n):
         objs = []
@@ -432,12 +448,22 @@ class MetricsCalculator():
                 break
 
     def set_inf_obj(self, num):
-        if num >= 0 and num < len(self.inf_objs):
+        if 0 <= num < len(self.inf_objs):
             self.chosen_inf_obj = self.inf_objs[num]
 
 
 if __name__ == "__main__":
     print("hello world")
-    m = MetricsCalculator('./Graph_Uni_Proj/Ekb.osm')
+    m = MetricsCalculator('./Ekb.osm')
+    m.crop_and_save_graph()
+
+    # ox.save_load.save_as_osm(m.graph, filename='Ekb_cropped.osm')
+
+    # start = time.time()
+    # m.set_objs(5)
+    # m.set_inf_obj(3)
+    # res = m.second_part()
+    # print(time.time() - start)
+    # print(res)
     #print(m.nearest(mode='fwd', start='node'))
-    print(nearest_list_for_list)
+    # print(nearest_list_for_list)
