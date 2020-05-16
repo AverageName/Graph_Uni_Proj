@@ -302,7 +302,6 @@ class MetricsCalculator():
         inf_obj = self.chosen_inf_obj
         objs = self.chosen_objs
         obj_centroids = []
-        # centroid_trees = []
         all_routes = []
         centroid_nodes = []
         number = 1
@@ -401,6 +400,7 @@ class MetricsCalculator():
         self.clusters_results[amount] = sum_
         return sum_
 
+
     def second_part(self):
         self.save_chosen_objs_to_csv()
 
@@ -409,24 +409,24 @@ class MetricsCalculator():
 
         clusters, history = self.objs_into_clusters(1, write=True)
         self.dendrogram(clusters, history)
-        # cs_2 = self.work_with_clusters(history, 2)
-        # cs_3 = self.work_with_clusters(history, 3)
-        # cs_5 = self.work_with_clusters(history, 5)
-        thread_2 = threading.Thread(target=self.work_with_clusters, args=(history, 2))
-        thread_2.setDaemon(True)
-        thread_3 = threading.Thread(target=self.work_with_clusters, args=(history, 3))
-        thread_3.setDaemon(True)
-        thread_5 = threading.Thread(target=self.work_with_clusters, args=(history, 5))
-        thread_5.setDaemon(True)
-        thread_2.start()
-        thread_3.start()
-        thread_5.start()
-        thread_2.join()
-        thread_3.join()
-        thread_5.join()
+        cs_2 = self.work_with_clusters(history, 2)
+        cs_3 = self.work_with_clusters(history, 3)
+        cs_5 = self.work_with_clusters(history, 5)
+        # thread_2 = threading.Thread(target=self.work_with_clusters, args=(history, 2))
+        # thread_2.setDaemon(True)
+        # thread_3 = threading.Thread(target=self.work_with_clusters, args=(history, 3))
+        # thread_3.setDaemon(True)
+        # thread_5 = threading.Thread(target=self.work_with_clusters, args=(history, 5))
+        # thread_5.setDaemon(True)
+        # thread_2.start()
+        # thread_3.start()
+        # thread_5.start()
+        # thread_2.join()
+        # thread_3.join()
+        # thread_5.join()
 
         # return self.clusters_results
-        # return cs_2, cs_3, cs_5
+        return cs_2, cs_3, cs_5
 
     def set_objs(self, n):
         objs = []
