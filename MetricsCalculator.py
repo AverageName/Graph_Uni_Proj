@@ -102,9 +102,11 @@ class MetricsCalculator():
     def update_nodes_list(self):
         self.nodes = list(self.graph.nodes.keys())
 
+    # 1.a
     def nearest(self, mode: str, start: str) -> dict:
         return self.func_dict_nearest[mode + "_" + start]()
 
+    #1.b
     def closer_than_x(self, distance: int, mode: str, start: str) -> dict:
         closer_than_x = {}
         distances, _ = self.func_dict_distances[mode + "_" + start]()
@@ -125,6 +127,7 @@ class MetricsCalculator():
 
         return closer_than_x
 
+    # 2
     def min_furthest_for_inf(self, mode: str) -> tuple:
         distances, _ = self.func_dict_distances[mode + "_" + "inf"]()
         min_ = float("inf")
@@ -134,6 +137,7 @@ class MetricsCalculator():
                 min_, min_id = max([(distances[obj][obj2], obj) for obj2 in self.objs])
         return (min_, min_id)
 
+    # 3
     def closest_inf_in_summary(self, mode: str, start: str) -> tuple:
         distances, _ = self.func_dict_distances["fwd_inf"]()
         min_ = float("inf")
@@ -147,27 +151,44 @@ class MetricsCalculator():
                 min_id = obj
         return min_, min_id
 
-    #     def min_weight_tree(self) -> tuple:
-    #         distances, preds = self.func_dict_distances['fwd_inf']()
-    #         min_ = float("inf")
-    #         min_id = -1
-    #         for obj in self.inf_objs:
-    #             edges = set()
-    #             sum_ = 0
-    #             for obj2 in self.objs:
-    #                 pred = preds[obj]
-    #                 curr = obj2
-    #                 while curr != obj:
-    #                     if (curr, pred[curr]) not in edges:
-    #                         edges.add((curr, pred[curr]))
-    #                         sum_ += (distances[obj][curr] - distances[obj][pred[curr]])
-    #                     curr = pred[curr]
-    #             if sum_ < min_:
-    #                 min_ = sum_
-    #                 min_id = obj
-    #         for obj in self.objs:
-    #             print(distances[min_id][obj])
-    #         return (min_, min_id)
+    # 4
+    def min_weight_tree(self, csv_file: str="tree_of_min_weight_paths.csv") -> tuple:
+        distances, preds = self.func_dict_distances['fwd_inf']()
+        min_ = float("inf")
+        min_id = -1
+        min_edges = None
+        for obj in self.inf_objs:
+            edges = set()
+            sum_ = 0
+            for obj2 in self.objs:
+                pred = preds[obj]
+                curr = obj2
+                while curr != obj:
+                    if (curr, pred[curr]) not in edges:
+                        edges.add((curr, pred[curr]))
+                        sum_ += (distances[obj][curr] - distances[obj][pred[curr]])
+                    curr = pred[curr]
+            if sum_ < min_:
+                min_ = sum_
+                min_id = obj
+                min_edges = edges
+
+        dict_ = {}
+        for pair in min_edges:
+            if pair[0] in dict_:
+                dict_[pair[0]] = [pair[1]]
+            else:
+                dict_[pair[0]].append(pair[1])
+
+        if csv_file is not None:
+            with open(csv_file, 'w') as f:
+                csv_writer = csv.writer(f, delimiter='\t')
+                csv_writer.writerow(['Vertex', 'Adjacent vertexes'])
+                for vertex in dict_.keys():
+                    csv_writer.writerow([str(vertex), ','.join(str(idx) for idx in dict_[vertex])])
+
+        return (min_, min_id)
+
 
     def list_to_obj_tree(self, objs, start_obj, filename, skip_inf_dists=False, write=True):
         distances, preds = distances_fwd(self.graph.adj, [start_obj], objs, self.weights)
