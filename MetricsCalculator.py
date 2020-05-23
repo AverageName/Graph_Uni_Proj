@@ -186,11 +186,17 @@ class MetricsCalculator():
             for obj2 in self.chosen_objs:
                 pred = preds[obj]
                 curr = obj2
+                curr_sum = 0
                 while curr != obj:
                     if (curr, pred[curr]) not in edges:
-                        edges.add((curr, pred[curr]))
-                        sum_ += (distances[obj][curr] - distances[obj][pred[curr]])
+                        if pred[curr] is None or curr is None:
+                            curr_sum = 0
+                            break
+                        else:
+                            edges.add((curr, pred[curr]))
+                            curr_sum += (distances[obj][curr] - distances[obj][pred[curr]])
                     curr = pred[curr]
+                sum_ += curr_sum
             if sum_ < min_:
                 min_ = sum_
                 min_id = obj
