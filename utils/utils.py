@@ -134,7 +134,7 @@ def distances_fwd(adj_list: dict, list1: list, list2: list, weights: Optional[di
     preds = {}
     for obj in list1:
         distances[obj], preds[obj] = dijkstra(adj_list, obj, weights)
-    return (distances, preds)
+    return distances, preds
 
 
 def distances_bwd(adj_list: dict, list1: list, list2: list, weights: Optional[dict] = None) -> Tuple[dict]:

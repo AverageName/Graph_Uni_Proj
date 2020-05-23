@@ -10,6 +10,7 @@ import os
 import csv
 import threading
 import time
+from matplotlib.lines import Line2D
 
 from utils.utils import *
 
@@ -23,8 +24,8 @@ class MetricsCalculator():
         self.weights = {}
         self.nodes = []
         self.clusters_results = {}
-        self.inf_objs = [4353602429, 411827206, 469191096, 433569978, 241927948, 220628145, 192290378, 475876249,
-                         4346949771, 1298014697, 456682436, 1628030509, 4353588566, 175060062, 192073549, 4355578113,
+        self.inf_objs = [4353602429, 411827206, 469191096, 433569978, 241927948, 220628145, 475876249,
+                         4346949771, 456682436, 1628030509, 4353588566, 175060062, 192073549, 4355578113,
                          4347321633, 412537658, 1412634107, 176134383, 192127240, 1185494724]
         self.chosen_objs = []
         self.chosen_inf_obj = 0
@@ -56,18 +57,18 @@ class MetricsCalculator():
     def crop_and_save_graph(self, save=False):
         if save:
             fig, ax = ox.plot_graph(self.graph, save=True, show=False, filename='Ekb_graph', file_format='png',
-                                    node_alpha=0, edge_color='b', edge_linewidth=0.7)
+                                    node_alpha=0, edge_color='b', edge_linewidth=0.7, dpi=200)
         ox.core.remove_isolated_nodes(self.graph)
         removing_nodes = []
         for i in self.graph.nodes:
             node = self.graph.nodes[i]
-            if node['x'] < 60.46 or node['x'] > 60.87 or node['y'] < 56.737 or node['y'] > 56.915:
+            if node['x'] < 60.46 or node['x'] > 60.87 or node['y'] < 56.737 or node['y'] > 57:
                 removing_nodes.append(i)
         self.graph.remove_nodes_from(removing_nodes)
 
         removing_nodes = []
-        distances, preds = distances_fwd(self.graph.adj, [4355578113], self.nodes, self.weights)
-        dists = distances[4355578113]
+        distances, preds = distances_fwd(self.graph.adj, [4353602429], self.nodes, self.weights)
+        dists = distances[4353602429]
         for i in dists:
             if dists[i] == float('inf'):
                 removing_nodes.append(i)
@@ -78,7 +79,7 @@ class MetricsCalculator():
         self.objs = list(filter(lambda x: x not in inf_objs_set, self.nodes))
 
         if save:
-            fig, ax = ox.plot_graph(self.graph, save=True, show=False, filename='Ekb_graph_cropped',
+            fig, ax = ox.plot_graph(self.graph, save=True, show=False, filename='Ekb_graph_cropped', dpi=200,
                                     file_format='png', node_alpha=0, edge_color='b', edge_linewidth=0.7)
 
     def set_inf_objs(self, objs):
@@ -170,16 +171,21 @@ class MetricsCalculator():
 
     def list_to_obj_tree(self, objs, start_obj, filename, skip_inf_dists=False, write=True):
         distances, preds = distances_fwd(self.graph.adj, [start_obj], objs, self.weights)
+        # distances, pred = distances_bwd(self.graph.adj, objs, [start_obj], self.weights)
         edges = set()
         sum_ = 0
         routes_list = []
         tree_dict = {}
+        index = 0
+        objs_without_routes = []
         for obj in objs:
+            index += 1
             if distances[start_obj][obj] == float('inf'):
                 if skip_inf_dists:
                     return 'no tree'
                 else:
                     print('no way to ' + str(obj))
+                    objs_without_routes.append((index, obj))
                     continue
             pred = preds[start_obj]
             curr = obj
@@ -207,7 +213,7 @@ class MetricsCalculator():
                 for vertex in tree_dict.keys():
                     csv_writer.writerow([str(vertex), ','.join(str(idx) for idx in tree_dict[vertex])])
 
-        return sum_, routes_list
+        return sum_, routes_list, objs_without_routes
 
     def write_csv(self, filename, rows):
         csv_file = open(os.path.join('./csv', filename), 'w')
@@ -225,22 +231,22 @@ class MetricsCalculator():
         for i in range(len(objs)):
             clusters.append([i])
             dists_dict[i] = {}
+            for j in range(len(objs)):
+                dists_dict[i][j] = float('inf')
 
         for i in range(len(objs)):
-            phi1 = self.graph.nodes[objs[i]]['y']
-            l1 = self.graph.nodes[objs[i]]['x']
-            for j in range(i + 1, len(objs)):
-                phi2 = self.graph.nodes[objs[j]]['y']
-                l2 = self.graph.nodes[objs[j]]['x']
-                cos = math.sin(phi1) * math.sin(phi2) + math.cos(phi1) * math.cos(phi2) * math.cos(l1 - l2)
-                dist = math.acos(cos) * 6371
-                dists_dict[i][j] = dists_dict[j][i] = dist
-        history = [clusters]
+            dists, _ = distances_fwd(self.graph.adj, [objs[i]], [], self.weights)
+            for j in range(len(objs)):
+                if i == j:
+                    continue
+                if dists[objs[i]][objs[j]] < dists_dict[i][j]:
+                    dists_dict[i][j] = dists_dict[j][i] = dists[objs[i]][objs[j]]
 
-        while len(clusters) > k:
+        history = [clusters]
+        for _ in range(len(objs) - 1):
             min_ = float('inf')
-            min_start = -1
-            min_end = -1
+            min_start = 0
+            min_end = 1
             for i in range(len(clusters)):
                 for j in range(i + 1, len(clusters)):
                     max_ = -1
@@ -252,7 +258,7 @@ class MetricsCalculator():
                                 max_ = dists_dict[ind1][ind2]
                                 max_start = i
                                 max_end = j
-                    if max_ < min_:
+                    if max_ < min_ and max_ != -1:
                         min_ = max_
                         min_start = max_start
                         min_end = max_end
@@ -303,6 +309,7 @@ class MetricsCalculator():
         objs = self.chosen_objs
         obj_centroids = []
         all_routes = []
+        objs_without_routes = []
         centroid_nodes = []
         number = 1
         for cluster in clusters:
@@ -324,28 +331,37 @@ class MetricsCalculator():
                     continue
             obj_centroids.append(centr_obj_id)
             cluster_objs = [objs[i] for i in cluster]
-            weight, routes_list = self.list_to_obj_tree(cluster_objs, centr_obj_id,
+            weight, routes_list, objs_wt_routes = self.list_to_obj_tree(cluster_objs, centr_obj_id,
                                                         filename='./csv/cluster_tree_number_{}.csv'.format(number))
             all_routes += routes_list
+            objs_without_routes += objs_wt_routes
             centroid_nodes.append(self.graph.nodes[centr_obj_id])
             number += 1
 
         name = str(len(clusters)) + '_clusters_trees'
-        self.save_tree_plot(all_routes, centroid_nodes, name)
+        self.save_tree_plot(all_routes, centroid_nodes, name, objs_without_routes)
 
         name = str(len(clusters)) + '_centroids_tree'
-        sum_, routes = self.list_to_obj_tree(obj_centroids, inf_obj, './csv/' + name + '.csv')
-        self.save_tree_plot(routes, [self.graph.nodes[inf_obj]], name)
+        sum_, routes, objs_wt_routes = self.list_to_obj_tree(obj_centroids, inf_obj, './csv/' + name + '.csv')
+        self.save_tree_plot(routes, [self.graph.nodes[inf_obj]], name, objs_wt_routes)
 
         return sum_
 
-    def save_tree_plot(self, routes_list, blue_nodes, name):
+    def save_tree_plot(self, routes_list, blue_nodes, name, objs_wt_routes=None):
+        if objs_wt_routes is None:
+            objs_wt_routes = []
         fig, ax = ox.plot.plot_graph_routes(self.graph, routes_list, show=False, close=False, node_alpha=0,
                                             edge_color='lightgray', edge_alpha=1, edge_linewidth=0.8,
                                             route_color='#00cc66', route_linewidth=0.8, route_alpha=1,
-                                            orig_dest_node_size=10, orig_dest_node_color='r', orig_dest_node_alpha=1)
+                                            orig_dest_node_size=10, orig_dest_node_color='m', orig_dest_node_alpha=1)
         for node in blue_nodes:
             ax.scatter(node['x'], node['y'], c='#0000ff', s=10, zorder=10)
+
+        for i in range(len(objs_wt_routes)):
+            node = self.graph.nodes[objs_wt_routes[i][1]]
+            ax.scatter(node['x'], node['y'], c='r', s=5, zorder=10)
+            ax.annotate(xy=(node['x'], node['y']), s=str(objs_wt_routes[i][0]), size=4,
+                        xytext=(node['x'] + 0.0025, node['y']))
 
         for i in range(len(routes_list)):
             node = self.graph.nodes[routes_list[i][-1]]
@@ -401,32 +417,19 @@ class MetricsCalculator():
         return sum_
 
 
-    def second_part(self):
-        self.save_chosen_objs_to_csv()
-
-        sum_, routes_list = self.list_to_obj_tree(self.chosen_objs, self.chosen_inf_obj, filename='./csv/min_tree.csv')
-        self.save_tree_plot(routes_list, [self.graph.nodes[routes_list[0][0]]], 'routes_to_random_inf')
-
-        clusters, history = self.objs_into_clusters(1, write=True)
-        self.dendrogram(clusters, history)
-        cs_2 = self.work_with_clusters(history, 2)
-        cs_3 = self.work_with_clusters(history, 3)
-        cs_5 = self.work_with_clusters(history, 5)
-        # thread_2 = threading.Thread(target=self.work_with_clusters, args=(history, 2))
-        # thread_2.setDaemon(True)
-        # thread_3 = threading.Thread(target=self.work_with_clusters, args=(history, 3))
-        # thread_3.setDaemon(True)
-        # thread_5 = threading.Thread(target=self.work_with_clusters, args=(history, 5))
-        # thread_5.setDaemon(True)
-        # thread_2.start()
-        # thread_3.start()
-        # thread_5.start()
-        # thread_2.join()
-        # thread_3.join()
-        # thread_5.join()
-
-        # return self.clusters_results
-        return cs_2, cs_3, cs_5
+    # def second_part(self):
+    #     self.save_chosen_objs_to_csv()
+    #
+    #     sum_, routes_list = self.list_to_obj_tree(self.chosen_objs, self.chosen_inf_obj, filename='./csv/min_tree.csv')
+    #     self.save_tree_plot(routes_list, [self.graph.nodes[routes_list[0][0]]], 'routes_to_random_inf')
+    #
+    #     clusters, history = self.objs_into_clusters(1, write=True)
+    #     self.dendrogram(clusters, history)
+    #     cs_2 = self.work_with_clusters(history, 2)
+    #     cs_3 = self.work_with_clusters(history, 3)
+    #     cs_5 = self.work_with_clusters(history, 5)
+    #
+    #     return cs_2, cs_3, cs_5
 
     def set_objs(self, n):
         objs = []
@@ -457,13 +460,35 @@ if __name__ == "__main__":
     m = MetricsCalculator('./Ekb.osm')
     m.crop_and_save_graph()
 
-    # ox.save_load.save_as_osm(m.graph, filename='Ekb_cropped.osm')
+    # for i in range(len(m.inf_objs)):
+    #     try:
+    #         ans = m.graph.nodes[m.inf_objs[i]]
+    #     except KeyError:
+    #         print(i, m.inf_objs[i])
 
-    # start = time.time()
-    # m.set_objs(5)
-    # m.set_inf_obj(3)
-    # res = m.second_part()
-    # print(time.time() - start)
-    # print(res)
-    #print(m.nearest(mode='fwd', start='node'))
-    # print(nearest_list_for_list)
+
+
+    # hospitals = 7
+    # fire_departments = 5
+    # fig, ax = ox.plot_graph(m.graph, save=False, show=False, node_alpha=0, edge_color='lightgray', edge_linewidth=0.7)
+    # for i in range(len(m.inf_objs)):
+    #     color = 'k'
+    #     if i < hospitals:
+    #         color = 'g'
+    #     elif i < hospitals + fire_departments:
+    #         color = 'r'
+    #     else:
+    #         color = 'b'
+    #     node = m.graph.nodes[m.inf_objs[i]]
+    #     ax.scatter(node['x'], node['y'], c=color, s=7, zorder=10)
+    #     ax.annotate(xy=(node['x'], node['y']), s=str(i), size=4, xytext=(node['x'] + 0.0025, node['y']))
+    #
+    # legend_elems = [Line2D([0], [0], marker='o', color='w', label='hospital',
+    #                           markerfacecolor='g', markersize=7),
+    #                 Line2D([0], [0], marker='o', color='w', label='fire department',
+    #                           markerfacecolor='r', markersize=7),
+    #                 Line2D([0], [0], marker='o', color='w', label='shop',
+    #                           markerfacecolor='b', markersize=7)]
+    # ax.legend(handles=legend_elems, loc='lower left', fontsize= 'x-small')
+    # ox.plot.save_and_show(fig, ax, save=True, show=False, filename='inf_objs', file_format='png',
+    #                       close=True, dpi=200, axis_off=True)
