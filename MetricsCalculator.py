@@ -144,7 +144,7 @@ class MetricsCalculator():
         return (min_, min_id)
 
     # 3
-    def closest_inf_in_summary(self, mode: str, start: str) -> tuple:
+    def closest_inf_in_summary(self) -> tuple:
         distances, _ = self.func_dict_distances["fwd_inf"]()
         min_ = float("inf")
         min_id = -1
@@ -356,7 +356,6 @@ class MetricsCalculator():
                         centr_obj_id = id_
                 except:
                     continue
-            print('centroid ' + str(number) + ' id: ' + str(centr_obj_id))
             obj_centroids.append(centr_obj_id)
             cluster_objs = [objs[i] for i in cluster]
             weight, routes_list, objs_wt_routes = self.list_to_obj_tree(cluster_objs, centr_obj_id,
@@ -383,7 +382,11 @@ class MetricsCalculator():
                                             route_color='#00cc66', route_linewidth=0.8, route_alpha=1,
                                             orig_dest_node_size=10, orig_dest_node_color='m', orig_dest_node_alpha=1)
         for node in blue_nodes:
-            ax.scatter(node['x'], node['y'], c='#0000ff', s=10, zorder=10)
+            try:
+                ax.scatter(node['x'], node['y'], c='#0000ff', s=10, zorder=10)
+            except:
+                graph_node = self.graph.nodes[node]
+                ax.scatter(graph_node['x'], graph_node['y'], c='#0000ff', s=10, zorder=10)
 
         for i in range(len(objs_wt_routes)):
             node = self.graph.nodes[objs_wt_routes[i][1]]
@@ -452,7 +455,6 @@ class MetricsCalculator():
             if id_ not in objs_set:
                 objs.append(id_)
                 objs_set.add(id_)
-                print(i, id_)
         self.chosen_objs = objs
         self.chosen_inf_obj = self.inf_objs[random.randint(0, len(self.inf_objs) - 1)]
 
@@ -493,11 +495,14 @@ class MetricsCalculator():
 if __name__ == "__main__":
     print("hello world")
     m = MetricsCalculator('./Ekb.osm')
-    # print(len(m.graph.adj))
     m.crop_and_save_graph()
+    m.save_tree_plot([], [3754575475, 1180314607, 231270645, 175266257, 436363937,
+                          4407072625, 1491524843, 1910990205, 413897080, 280313329], 'klfmkl', [(0, 1412634107)])
+    # print(len(m.inf_objs))
+    # print(len(m.objs))
+    # print(m.closest_inf_in_summary())
+    # x = int('abc')
 
-    # dists, preds = dijkstra(m.graph.adj, 420036591, m.weights)
-    # print(dists[3755440425])
     # hospitals = 7
     # fire_departments = 5
     # fig, ax = ox.plot_graph(m.graph, save=False, show=False, node_alpha=0, edge_color='lightgray', edge_linewidth=0.7)
