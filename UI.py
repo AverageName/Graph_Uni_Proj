@@ -4,7 +4,6 @@ from tkinter import messagebox
 from PIL import ImageTk, Image
 from functools import partial
 from MetricsCalculator import MetricsCalculator
-import threading
 import time
 
 
@@ -92,24 +91,17 @@ class App:
     def add_and_recount(self):
         self.mc.add_obj()
         self.n_input.selection_adjust(5)
-        # self.window.update()
         self.second_part()
 
     def second_part(self):
         self.progress.configure(length=200)
         self.hide_info()
 
-        # n = int(self.n_input.get())
-        # inf_obj_i = int(self.inf_index.get())
-        # self.mc.set_objs(n)
-        # self.mc.set_inf_obj(inf_obj_i)
-
         start = time.time()
         self.mc.save_chosen_objs_to_csv()
         self.update_progress(11)
         sum_, routes_list, o_w_r = self.mc.list_to_obj_tree(self.mc.chosen_objs, self.mc.chosen_inf_obj,
                                                      filename='./csv/min_tree.csv')
-        # time.sleep(3)
         self.update_progress(22)
         self.mc.save_tree_plot(routes_list, [self.mc.graph.nodes[routes_list[0][0]]], 'routes_to_random_inf', o_w_r)
         self.update_progress(33)
@@ -124,7 +116,6 @@ class App:
         cs_5 = self.mc.work_with_clusters(history, 5)
         self.update_progress(100)
 
-        # cs_2, cs_3, cs_5 = self.mc.second_part()
         result = "2 centroids tree: {}\n3 centroids tree: {}\n5 centroids tree: {}\ntime: {}"\
             .format(cs_2, cs_3, cs_5, time.time() - start)
         self.set_image('routes_to_random_inf')
@@ -156,13 +147,6 @@ class App:
 
 m = MetricsCalculator('./Ekb.osm')
 m.crop_and_save_graph()
-
-# start = time.time()
-# m.set_objs(5)
-# m.set_inf_obj(3)
-# res = m.second_part()
-# print(time.time() - start)
-# print(res)
 
 app = App(m)
 app.start_loop()
