@@ -157,7 +157,7 @@ class MetricsCalculator():
         for obj in self.inf_objs:
             if min_ > max([(distances[obj][obj2], obj) for obj2 in self.objs if distances[obj][obj2] != float("inf")])[0]:
                 min_, min_id = max([(distances[obj][obj2], obj) for obj2 in self.objs if distances[obj][obj2] != float("inf")])
-        return (min_, min_id)
+        return min_, min_id
 
     # 3
     def closest_inf_in_summary(self) -> tuple:
@@ -513,15 +513,16 @@ if __name__ == "__main__":
     print("hello world")
     m = MetricsCalculator('./Ekb.osm')
     m.crop_and_save_graph()
-    m.save_tree_plot([], [3754575475, 1180314607, 231270645, 175266257, 436363937,
-                          4407072625, 1491524843, 1910990205, 413897080, 280313329], 'klfmkl', [(0, 1412634107)])
+    # m.save_tree_plot([], [3754575475, 1180314607, 231270645, 175266257, 436363937,
+    #                       4407072625, 1491524843, 1910990205, 413897080, 280313329], 'klfmkl', [(0, 1412634107)])
     # print(len(m.inf_objs))
     # print(len(m.objs))
     # print(m.closest_inf_in_summary())
     # x = int('abc')
     #print(m.objs)
     m.set_objs(10)
-    print(m.min_weight_tree(csv_file=None))
+    # print(m.min_weight_tree(csv_file=None))
+    print(m.closest_inf_in_summary())
 
     # hospitals = 7
     # fire_departments = 5
