@@ -25,15 +25,36 @@ class App:
         Label(self.window, width=10).grid(column=2)
 
         Button(self.window, text='Показать Екатеринбург',
-               command=partial(self.set_image, "Ekb_graph_cropped")).grid(column=1, row=1)
+               command=partial(self.set_image, "Ekb_graph_cropped")).grid(column=1, row=1, pady=3)
         Label(self.window, text='').grid(column=1, row=2)
 
         Label(self.window, text='Часть 1').grid(column=1, row=3)
-        Button(self.window, text='Рассчитать 1.а,б').grid(column=1, row=4)
-        Label(self.window, text='Вывод в файле ...').grid(column=1, row=5)
-        Button(self.window, text='Показать объект из п.2').grid(column=1, row=6)
-        Button(self.window, text='Показать объект из п.3').grid(column=1, row=7, pady=3)
-        Button(self.window, text='Показать объект из п.4').grid(column=1, row=8)
+        Label(self.window, text='start: ').grid(column=0, row=3, sticky=E)
+        self.start_1 = Combobox(self.window, width=10)
+        self.start_1.grid(column=1, row=3, sticky=W)
+        self.start_1['values'] = ("inf", "node")
+        self.start_1.current(0)
+        Label(self.window, text='X = ').grid(column=0, row=4, sticky=E)
+        self.x = Entry(self.window, width=10)
+        self.x.grid(column=1, row=4, sticky=W)
+        Button(self.window, text='Рассчитать 1.а,б', command=self.count_first).grid(column=1, row=4, sticky=E)
+        self.csv_name = Label(self.window, text='')
+        self.csv_name.grid(column=1, row=5, sticky=E)
+        Label(self.window, text='mode(1): ').grid(column=0, row=5, sticky=E)
+        self.mode_1 = Combobox(self.window, width=10)
+        self.mode_1.grid(column=1, row=5, sticky=W)
+        self.mode_1['values'] = ("Туда", "Обратно", "Туда-обратно")
+        self.mode_1.current(0)
+
+        Label(self.window, text='mode(2): ').grid(column=0, row=6, sticky=E)
+        self.mode_2 = Combobox(self.window, width=10)
+        self.mode_2.grid(column=1, row=6, sticky=W)
+        self.mode_2['values'] = ("Туда", "Обратно", "Туда-обратно")
+        self.mode_2.current(0)
+        Button(self.window, text='Показать объект из п.2', command=self.count_second).grid(column=1, row=6, sticky=E)
+        Button(self.window, text='Показать объект из п.3', command=self.count_third)\
+            .grid(column=1, row=7, pady=3, sticky=E)
+        Button(self.window, text='Показать объект из п.4', command=self.count_fourth).grid(column=1, row=8, sticky=E)
 
         Label(self.window, text='', height=4).grid(column=1, row=9)
         Label(self.window, text='Часть 2').grid(column=1, row=10)
@@ -65,6 +86,27 @@ class App:
         Label(self.window, text='').grid(column=1, row=20)
         self.add_recount = Button(self.window, text='Добавить пункт назначения и пересчитать',
                                   command=self.add_and_recount)
+
+    def count_first(self):
+        self.csv_name.configure(text='')
+        try:
+            x = int(self.x.get())
+            time.sleep(3)
+            self.csv_name.configure(text='some_file.csv')
+        except ValueError:
+            messagebox.showinfo('error', 'x should be numeric')
+            return
+
+    def count_second(self):
+        modes = ('fwd', 'bwd', 'fwd_bwd')
+        index = self.mode_2['values'].index(self.mode_2.get())
+        messagebox.showinfo('mode', modes[index])
+
+    def count_third(self):
+        messagebox.showinfo('3', 'hello')
+
+    def count_fourth(self):
+        messagebox.showinfo('4', 'hello')
 
     def set_image(self, name):
         self.load = Image.open("./images/{}.png".format(name))
