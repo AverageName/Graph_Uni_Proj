@@ -1,1 +1,3 @@
 csv/adjacency_matrix.csv
+*.pyc
+.ipynb_checkpoints
