@@ -29,6 +29,7 @@ class MetricsCalculator():
                          4346949771, 456682436, 1628030509, 4353588566, 175060062, 192073549, 4355578113,
                          4347321633, 412537658, 1412634107, 176134383, 192127240, 1185494724]
         self.chosen_objs = []
+        self.chosen_inf_objs = []
         self.chosen_inf_obj = 0
         self.non_oriented_adj_list = {}
         for obj in self.inf_objs:
@@ -37,24 +38,24 @@ class MetricsCalculator():
             if obj not in self.weights:
                 self.weights[obj] = 1
 
-        self.func_dict_nearest = {
-            "fwd_node": partial(nearest_list_for_list, self.graph.adj, self.chosen_objs, self.inf_objs, self.weights),
-            "fwd_inf": partial(nearest_list_for_list, self.graph.adj, self.inf_objs, self.chosen_objs, self.weights),
-            "fwd_bwd_node": partial(nearest_fwd_bwd_list_for_list, self.graph.adj, self.chosen_objs, self.inf_objs,
-                                    self.weights),
-            "fwd_bwd_inf": partial(nearest_fwd_bwd_list_for_list, self.graph.adj, self.inf_objs, self.chosen_objs,
-                                   self.weights),
-            "bwd_node": partial(nearest_bwd_list_for_list, self.graph.adj, self.chosen_objs, self.inf_objs, self.weights),
-            "bwd_inf": partial(nearest_fwd_bwd_list_for_list, self.graph.adj, self.inf_objs, self.chosen_objs, self.weights)
-        }
-        self.func_dict_distances = {
-            "fwd_node": partial(distances_fwd, self.graph.adj, self.chosen_objs, self.inf_objs, self.weights),
-            "fwd_inf": partial(distances_fwd, self.graph.adj, self.inf_objs, self.chosen_objs, self.weights),
-            "bwd_node": partial(distances_bwd, self.graph.adj, self.chosen_objs, self.inf_objs, self.weights),
-            "bwd_inf": partial(distances_bwd, self.graph.adj, self.inf_objs, self.chosen_objs, self.weights),
-            "fwd_bwd_node": partial(distances_fwd_bwd, self.graph.adj, self.chosen_objs, self.inf_objs, self.weights),
-            "fwd_bwd_inf": partial(distances_fwd_bwd, self.graph.adj, self.inf_objs, self.chosen_objs, self.weights)
-        }
+        # self.func_dict_nearest = {
+        #     "fwd_node": partial(nearest_list_for_list, self.graph.adj, self.chosen_objs, self.inf_objs, self.weights),
+        #     "fwd_inf": partial(nearest_list_for_list, self.graph.adj, self.inf_objs, self.chosen_objs, self.weights),
+        #     "fwd_bwd_node": partial(nearest_fwd_bwd_list_for_list, self.graph.adj, self.chosen_objs, self.inf_objs,
+        #                             self.weights),
+        #     "fwd_bwd_inf": partial(nearest_fwd_bwd_list_for_list, self.graph.adj, self.inf_objs, self.chosen_objs,
+        #                            self.weights),
+        #     "bwd_node": partial(nearest_bwd_list_for_list, self.graph.adj, self.chosen_objs, self.inf_objs, self.weights),
+        #     "bwd_inf": partial(nearest_fwd_bwd_list_for_list, self.graph.adj, self.inf_objs, self.chosen_objs, self.weights)
+        # }
+        # self.func_dict_distances = {
+        #     "fwd_node": partial(distances_fwd, self.graph.adj, self.chosen_objs, self.inf_objs, self.weights),
+        #     "fwd_inf": partial(distances_fwd, self.graph.adj, self.inf_objs, self.chosen_objs, self.weights),
+        #     "bwd_node": partial(distances_bwd, self.graph.adj, self.chosen_objs, self.inf_objs, self.weights),
+        #     "bwd_inf": partial(distances_bwd, self.graph.adj, self.inf_objs, self.chosen_objs, self.weights),
+        #     "fwd_bwd_node": partial(distances_fwd_bwd, self.graph.adj, self.chosen_objs, self.inf_objs, self.weights),
+        #     "fwd_bwd_inf": partial(distances_fwd_bwd, self.graph.adj, self.inf_objs, self.chosen_objs, self.weights)
+        # }
 
     def crop_and_save_graph(self, save=False):
         if save:
@@ -109,8 +110,14 @@ class MetricsCalculator():
         self.nodes = list(self.graph.nodes.keys())
 
     # 1.a
-    def nearest(self, mode: str, start: str, csv_file: str="./csv/nearest.csv") -> dict:
-        dict_nearest = self.func_dict_nearest[mode + "_" + start]()
+    def nearest(self, mode: str, csv_file: str="./csv/nearest.csv") -> dict:
+        # dict_nearest = self.func_dict_nearest[mode + "_" + start]()
+        if mode == "fwd":
+            dict_nearest = nearest_list_for_list(self.graph.adj, self.chosen_objs, self.chosen_inf_objs, self.weights)
+        elif mode == "bwd":
+            dict_nearest = nearest_bwd_list_for_list(self.graph.adj, self.chosen_objs, self.chosen_inf_objs, self.weights)
+        elif mode == "fwd_bwd":
+            dict_nearest = nearest_fwd_bwd_list_for_list(self.graph.adj, self.chosen_objs, self.chosen_inf_objs, self.weights)
 
         if csv_file is not None:
             with open(csv_file, 'w') as f:
@@ -122,18 +129,17 @@ class MetricsCalculator():
         return dict_nearest
 
     #1.b
-    def closer_than_x(self, distance: int, mode: str, start: str, csv_file: str="./csv/closer_than_x.csv") -> dict:
+    def closer_than_x(self, distance: int, mode: str, csv_file: str="./csv/closer_than_x.csv") -> dict:
         closer_than_x = {}
-        distances, _ = self.func_dict_distances[mode + "_" + start]()
-        if start == "node":
-            tmp = {'from': self.chosen_objs,
-                   'to': self.inf_objs}
-        elif start == "inf":
-            tmp = {'from': self.inf_objs,
-                   'to': self.chosen_objs}
+        if mode == "fwd":
+            distances, _ = distances_fwd(self.graph.adj, self.chosen_objs, self.chosen_inf_objs, self.weights)
+        elif mode == "bwd":
+            distances, _ = distances_bwd(self.graph.adj, self.chosen_objs, self.chosen_inf_objs, self.weights)
+        elif mode == "fwd_bwd":
+            distances, _ = distances_fwd_bwd(self.graph.adj, self.chosen_objs, self.chosen_inf_objs, self.weights)
 
-        for obj in tmp['from']:
-            for obj2 in tmp['to']:
+        for obj in self.chosen_objs:
+            for obj2 in self.chosen_inf_objs:
                 if distances[obj][obj2] <= distance * 1000:
                     if obj not in closer_than_x:
                         closer_than_x[obj] = [obj2]
@@ -151,20 +157,26 @@ class MetricsCalculator():
 
     # 2
     def min_furthest_for_inf(self, mode: str) -> tuple:
-        distances, _ = self.func_dict_distances[mode + "_" + "inf"]()
+        if mode == "fwd":
+            distances, _ = distances_fwd(self.graph.adj, self.chosen_objs, self.chosen_inf_objs, self.weights)
+        elif mode == "bwd":
+            distances, _ = distances_bwd(self.graph.adj, self.chosen_objs, self.chosen_inf_objs, self.weights)
+        elif mode == "fwd_bwd":
+            distances, _ = distances_fwd_bwd(self.graph.adj, self.chosen_objs, self.chosen_inf_objs, self.weights)
+
         min_ = float("inf")
         min_id = -1
-        for obj in self.inf_objs:
-            if min_ > max([(distances[obj][obj2], obj) for obj2 in self.objs if distances[obj][obj2] != float("inf")])[0]:
-                min_, min_id = max([(distances[obj][obj2], obj) for obj2 in self.objs if distances[obj][obj2] != float("inf")])
+        for obj in self.chosen_inf_objs:
+            if min_ > max([(distances[obj][obj2], obj) for obj2 in self.chosen_objs if distances[obj][obj2] != float("inf")])[0]:
+                min_, min_id = max([(distances[obj][obj2], obj) for obj2 in self.chosen_objs if distances[obj][obj2] != float("inf")])
         return (min_, min_id)
 
     # 3
     def closest_inf_in_summary(self) -> tuple:
-        distances, _ = self.func_dict_distances["fwd_inf"]()
+        distances, _ = distances_fwd(self.graph.adj, self.chosen_inf_objs, self.chosen_objs, self.weights)
         min_ = float("inf")
         min_id = -1
-        for obj in self.inf_objs:
+        for obj in self.chosen_inf_objs:
             dist = 0
             for obj2 in self.chosen_objs:
                 if distances[obj][obj2] != float("inf"):
@@ -176,11 +188,11 @@ class MetricsCalculator():
 
     # 4
     def min_weight_tree(self, csv_file: str="./csv/tree_of_min_weight_paths.csv") -> tuple:
-        distances, preds = self.func_dict_distances['fwd_inf']()
+        distances, preds = distances_fwd(self.graph.adj, self.chosen_inf_objs, self.chosen_objs, self.weights)
         min_ = float("inf")
         min_id = -1
         min_edges = None
-        for obj in self.inf_objs:
+        for obj in self.chosen_inf_objs:
             edges = set()
             sum_ = 0
             for obj2 in self.chosen_objs:
@@ -470,7 +482,7 @@ class MetricsCalculator():
         self.clusters_results[amount] = sum_
         return sum_
 
-    def set_objs(self, n):
+    def set_objs(self, n, m):
         objs = []
         objs_set = set()
         for i in range(n):
@@ -479,6 +491,15 @@ class MetricsCalculator():
                 objs.append(id_)
                 objs_set.add(id_)
         self.chosen_objs = objs
+        inf_objs_set = set()
+        inf_objs = []
+        for i in range(m):
+            id_ = self.inf_objs[random.randint(0, len(self.inf_objs) - 1)]
+            if id_ not in inf_objs_set:
+                inf_objs.append(id_)
+                inf_objs_set.add(id_)
+        self.chosen_inf_objs = inf_objs
+        #Delete?
         self.chosen_inf_obj = self.inf_objs[random.randint(0, len(self.inf_objs) - 1)]
 
     def add_obj(self):
@@ -517,16 +538,18 @@ class MetricsCalculator():
 
 if __name__ == "__main__":
     print("hello world")
-    m = MetricsCalculator('./Ekb.osm')
+    m = MetricsCalculator('./Graph_Uni_Proj/Ekb.osm')
     m.crop_and_save_graph()
-    m.save_tree_plot([], [3754575475, 1180314607, 231270645, 175266257, 436363937,
-                          4407072625, 1491524843, 1910990205, 413897080, 280313329], 'klfmkl', [(0, 1412634107)])
+    #m.save_tree_plot([], [3754575475, 1180314607, 231270645, 175266257, 436363937,
+                          #4407072625, 1491524843, 1910990205, 413897080, 280313329], 'klfmkl', [(0, 1412634107)])
     # print(len(m.inf_objs))
     # print(len(m.objs))
     # print(m.closest_inf_in_summary())
     # x = int('abc')
     #print(m.objs)
-    m.set_objs(10)
+    m.set_objs(10, 2)
+    print(m.chosen_objs)
+    print(m.closest_inf_in_summary())
     print(m.min_weight_tree(csv_file=None))
 
     # hospitals = 7
