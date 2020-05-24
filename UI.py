@@ -14,6 +14,8 @@ class App:
         self.window.title("Екатеринбург")
         self.window.geometry("1800x1000")
         self.result = ''
+        self.n_1 = self.m_1 = None
+        self.modes = ('fwd', 'bwd', 'fwd_bwd')
 
         self.load = Image.open("./images/Ekb_graph_cropped.png")
         self.image = ImageTk.PhotoImage(self.load)
@@ -29,50 +31,52 @@ class App:
         Label(self.window, text='').grid(column=1, row=2)
 
         Label(self.window, text='Часть 1').grid(column=1, row=3)
-        Label(self.window, text='start: ').grid(column=0, row=3, sticky=E)
-        self.start_1 = Combobox(self.window, width=10)
-        self.start_1.grid(column=1, row=3, sticky=W)
-        self.start_1['values'] = ("inf", "node")
-        self.start_1.current(0)
-        Label(self.window, text='X = ').grid(column=0, row=4, sticky=E)
-        self.x = Entry(self.window, width=10)
-        self.x.grid(column=1, row=4, sticky=W)
-        Button(self.window, text='Рассчитать 1.а,б', command=self.count_first).grid(column=1, row=4, sticky=E)
-        self.csv_name = Label(self.window, text='')
-        self.csv_name.grid(column=1, row=5, sticky=E)
-        Label(self.window, text='mode(1): ').grid(column=0, row=5, sticky=E)
-        self.mode_1 = Combobox(self.window, width=10)
-        self.mode_1.grid(column=1, row=5, sticky=W)
+        Label(self.window, text='M = ').grid(column=0, row=4, sticky=E)
+        self.m_1_input = Entry(self.window, width=5)
+        self.m_1_input.grid(column=1, row=4, sticky=W)
+        Label(self.window, text='N = ').grid(column=0, row=5, sticky=E)
+        self.n_1_input = Entry(self.window, width=5)
+        self.n_1_input.grid(column=1, row=5, sticky=W)
+
+        Button(self.window, text='Выбрать', command=self.set_m_n_1).grid(column=1, row=6, sticky=W, pady=1)
+        self.show_chosen_1 = Button(self.window, text='Показать выбранные')
+        Label(self.window, text='mode(1): ').grid(column=0, row=8, sticky=E)
+        self.mode_1 = Combobox(self.window, width=15)
+        self.mode_1.grid(column=1, row=8, sticky=W)
         self.mode_1['values'] = ("Туда", "Обратно", "Туда-обратно")
         self.mode_1.current(0)
+        self.task_1_1_a = Button(self.window, text='Рассчитать 1а', command=self.count_first_a)
+        Label(self.window, text='X = ').grid(column=0, row=9, sticky=E)
+        self.x = Entry(self.window, width=7)
+        self.x.grid(column=1, row=9, sticky=W)
+        self.task_1_1_b = Button(self.window, text='1б', command=self.count_first_b)
 
-        Label(self.window, text='mode(2): ').grid(column=0, row=6, sticky=E)
-        self.mode_2 = Combobox(self.window, width=10)
-        self.mode_2.grid(column=1, row=6, sticky=W)
+        Label(self.window, text='mode(2): ').grid(column=0, row=10, sticky=E)
+        self.mode_2 = Combobox(self.window, width=15)
+        self.mode_2.grid(column=1, row=10, sticky=W)
         self.mode_2['values'] = ("Туда", "Обратно", "Туда-обратно")
         self.mode_2.current(0)
-        Button(self.window, text='Показать объект из п.2', command=self.count_second).grid(column=1, row=6, sticky=E)
-        Button(self.window, text='Показать объект из п.3', command=self.count_third)\
-            .grid(column=1, row=7, pady=3, sticky=E)
-        Button(self.window, text='Показать объект из п.4', command=self.count_fourth).grid(column=1, row=8, sticky=E)
+        self.task_1_2 = Button(self.window, text='п. 2', command=self.count_second)
+        self.task_1_3 = Button(self.window, text='п. 3', command=self.count_third)
+        self.task_1_4 = Button(self.window, text='п. 4', command=self.count_fourth)
 
-        Label(self.window, text='', height=4).grid(column=1, row=9)
-        Label(self.window, text='Часть 2').grid(column=1, row=10)
+        Label(self.window, text='', height=4).grid(column=1, row=13)
+        Label(self.window, text='Часть 2').grid(column=1, row=14)
         Button(self.window, text='Показать карту инфраструктурных объектов',
-               command=partial(self.set_image, "inf_objs")).grid(column=1, row=11, pady=2)
-        Label(self.window, text='N = ').grid(column=1, row=12)
+               command=partial(self.set_image, "inf_objs")).grid(column=1, row=15, pady=2)
+        Label(self.window, text='N = ').grid(column=1, row=16)
         self.n_input = Spinbox(self.window, from_=1, to=100, width=5)
-        self.n_input.grid(column=1, row=12, sticky=E)
-        Label(self.window, text='Индекс инф. объекта: ').grid(column=1, row=13)
+        self.n_input.grid(column=1, row=16, sticky=E)
+        Label(self.window, text='Индекс инф. объекта: ').grid(column=1, row=17)
         self.inf_index = Spinbox(self.window, from_=0, to=21, width=5)
-        self.inf_index.grid(column=1, row=13, sticky=E)
-        Button(self.window, text='Рассчитать', command=self.count_sp).grid(column=1, row=14)
+        self.inf_index.grid(column=1, row=17, sticky=E)
+        Button(self.window, text='Рассчитать', command=self.count_sp).grid(column=1, row=18)
 
-        Label(self.window, text='', height=2).grid(column=1, row=15)
+        Label(self.window, text='', height=2).grid(column=1, row=19)
         self.progress = Progressbar(self.window, orient=HORIZONTAL, length=0, mode='determinate')
-        self.progress.grid(column=1, row=16)
+        self.progress.grid(column=1, row=20)
 
-        Label(self.window, text='', height=2).grid(column=1, row=17)
+        Label(self.window, text='', height=2).grid(column=1, row=21)
         self.combo = Combobox(self.window, width=30)
         self.combo['values'] = (
             "Дерево кратчайших путей", "Дендрограмма",
@@ -83,24 +87,43 @@ class App:
         self.combo.current(0)
         self.show_btn = Button(self.window, text='Показать', command=self.set_combo_image)
 
-        Label(self.window, text='').grid(column=1, row=20)
+        Label(self.window, text='').grid(column=1, row=24)
         self.add_recount = Button(self.window, text='Добавить пункт назначения и пересчитать',
                                   command=self.add_and_recount)
 
-    def count_first(self):
-        self.csv_name.configure(text='')
+    def set_m_n_1(self):
+        try:
+            self.n_1 = int(self.n_1_input.get())
+            self.m_1 = int(self.m_1_input.get())
+            messagebox.showinfo('m n', self.m_1 + self.n_1)
+            self.show_first_part()
+        except ValueError:
+            messagebox.showinfo('m n', 'M|N should be numeric')
+
+    def show_first_part(self):
+        self.show_chosen_1.grid(column=1, row=7, pady=1)
+        self.task_1_1_a.grid(column=1, row=8, sticky=E)
+        self.task_1_1_b.grid(column=1, row=9, sticky=E)
+        self.task_1_2.grid(column=1, row=10, sticky=E)
+        self.task_1_3.grid(column=1, row=11, pady=3, sticky=E)
+        self.task_1_4.grid(column=1, row=12, sticky=E)
+
+    def count_first_a(self):
+        index = self.mode_1['values'].index(self.mode_1.get())
+        messagebox.showinfo('1a', self.modes[index])
+
+    def count_first_b(self):
+        index = self.mode_1['values'].index(self.mode_1.get())
         try:
             x = int(self.x.get())
             time.sleep(3)
-            self.csv_name.configure(text='some_file.csv')
         except ValueError:
             messagebox.showinfo('error', 'x should be numeric')
             return
 
     def count_second(self):
-        modes = ('fwd', 'bwd', 'fwd_bwd')
         index = self.mode_2['values'].index(self.mode_2.get())
-        messagebox.showinfo('mode', modes[index])
+        messagebox.showinfo('mode', self.modes[index])
 
     def count_third(self):
         messagebox.showinfo('3', 'hello')
@@ -178,9 +201,9 @@ class App:
         self.window.update()
 
     def show_info(self):
-        self.combo.grid(column=1, row=18)
-        self.show_btn.grid(column=1, row=19)
-        self.add_recount.grid(column=1, row=21)
+        self.combo.grid(column=1, row=22)
+        self.show_btn.grid(column=1, row=23)
+        self.add_recount.grid(column=1, row=25)
         self.window.update()
 
     def start_loop(self):
