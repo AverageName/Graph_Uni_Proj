@@ -538,7 +538,7 @@ class MetricsCalculator():
 
 if __name__ == "__main__":
     print("hello world")
-    m = MetricsCalculator('./Graph_Uni_Proj/Ekb.osm')
+    m = MetricsCalculator('./Ekb.osm')
     m.crop_and_save_graph()
     #m.save_tree_plot([], [3754575475, 1180314607, 231270645, 175266257, 436363937,
                           #4407072625, 1491524843, 1910990205, 413897080, 280313329], 'klfmkl', [(0, 1412634107)])
@@ -547,10 +547,14 @@ if __name__ == "__main__":
     # print(m.closest_inf_in_summary())
     # x = int('abc')
     #print(m.objs)
-    m.set_objs(10, 2)
+    m.set_objs(10, 5)
     print(m.chosen_objs)
-    print(m.closest_inf_in_summary())
-    print(m.min_weight_tree(csv_file=None))
+    print(m.chosen_inf_objs)
+    print(m.nearest('fwd'))
+    # print(m.closer_than_x(10, 'fwd'))
+    print(m.min_furthest_for_inf('bwd'))
+    # print(m.closest_inf_in_summary())
+    # print(m.min_weight_tree(csv_file=None))
 
     # hospitals = 7
     # fire_departments = 5

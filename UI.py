@@ -149,7 +149,7 @@ class App:
     def count_sp(self):
         n = int(self.n_input.get())
         inf_obj_i = int(self.inf_index.get())
-        self.mc.set_objs(n)
+        self.mc.set_objs(n, 0)
         self.mc.set_inf_obj(inf_obj_i)
         self.second_part()
 
