@@ -11,7 +11,7 @@ import csv
 # import json
 # import threading
 # import time
-# from matplotlib.lines import Line2D
+from matplotlib.lines import Line2D
 
 from utils.utils import *
 
@@ -62,12 +62,6 @@ class MetricsCalculator():
             fig, ax = ox.plot_graph(self.graph, save=True, show=False, filename='Ekb_graph', file_format='png',
                                     node_alpha=0, edge_color='b', edge_linewidth=0.7, dpi=200)
         ox.core.remove_isolated_nodes(self.graph)
-        # removing_nodes = []
-        # for i in self.graph.nodes:
-        #     node = self.graph.nodes[i]
-        #     if node['x'] < 60.46 or node['x'] > 60.86 or node['y'] < 56.74:
-        #         removing_nodes.append(i)
-        # self.graph.remove_nodes_from(removing_nodes)
         self.update_nodes_list()
         self.set_non_oriented_adj_list()
 
@@ -77,8 +71,15 @@ class MetricsCalculator():
         for i in dists:
             if dists[i] == float('inf'):
                 removing_nodes.append(i)
-
         self.graph.remove_nodes_from(removing_nodes)
+        self.update_nodes_list()
+
+        dists, _ = dijkstra(m.graph.adj, 175246547, m.weights)
+        inf_arr = []
+        for id_ in dists:
+            if dists[id_] == float('inf'):
+                inf_arr.append(id_)
+        self.graph.remove_nodes_from(inf_arr)
         self.update_nodes_list()
         self.set_non_oriented_adj_list()
 
@@ -537,7 +538,7 @@ class MetricsCalculator():
         for i in range(len(points)):
             for j in range(len(points[i])):
                 node = self.graph.nodes[points[i][j]]
-                ax.scatter(node['x'], node['y'], c=colors[colors_num], s=7, zorder=10)
+                ax.scatter(node['x'], node['y'], c=colors[colors_num], s=5, zorder=10)
                 if annotates is not None:
                     ax.annotate(xy=(node['x'], node['y']), s=str(annotates[i][j]), size=4,
                                 xytext=(node['x'] + 0.0025, node['y']))
@@ -585,17 +586,13 @@ class MetricsCalculator():
 
 
 if __name__ == "__main__":
-    # print("hello world")
-    # print(', '.join([1, 2, 3]))
     m = MetricsCalculator('./Ekb.osm')
     m.crop_and_save_graph()
-    #m.save_tree_plot([], [3754575475, 1180314607, 231270645, 175266257, 436363937,
-                          #4407072625, 1491524843, 1910990205, 413897080, 280313329], 'klfmkl', [(0, 1412634107)])
 
-    m.chosen_objs = [175246547, 4043484683, 3263470212, 2425474474, 7326442638]
-    m.chosen_inf_objs = [4353602429, 1185494724, 456682436, 411827206]
+    # m.chosen_objs = [175246547, 4043484683, 3263470212, 2425474474, 7326442638]
+    # m.chosen_inf_objs = [4353602429, 1185494724, 456682436, 411827206]
     # print(m.chosen_inf_objs)
-    print(m.nearest(mode="fwd", csv_file=None))
+    # print(m.nearest(mode="fwd", csv_file=None))
 
     # print(m.closer_than_x(10, "fwd"))
     # print(m.min_furthest_for_inf("fwd"))
