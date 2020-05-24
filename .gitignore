@@ -1,5 +1,7 @@
-csv/adjacency_matrix.csv
 *.pyc
 .idea
 .ipynb_checkpoints
 __pycache__
+venv/
+*.png
+utils/__pycache__/

@@ -39,17 +39,20 @@ class App:
         self.n_1_input.grid(column=1, row=5, sticky=W)
 
         Button(self.window, text='Выбрать', command=self.set_m_n_1).grid(column=1, row=6, sticky=W, pady=1)
-        self.show_chosen_1 = Button(self.window, text='Показать выбранные')
+        self.show_chosen_1 = Button(self.window, text='Показать выбранные',
+                                    command=partial(self.set_image, "points_for_1_part"))
         Label(self.window, text='mode(1): ').grid(column=0, row=8, sticky=E)
         self.mode_1 = Combobox(self.window, width=15)
         self.mode_1.grid(column=1, row=8, sticky=W)
         self.mode_1['values'] = ("Туда", "Обратно", "Туда-обратно")
         self.mode_1.current(0)
         self.task_1_1_a = Button(self.window, text='Рассчитать 1а', command=self.count_first_a)
+        self.show_1_1_a = Button(self.window, text='Show', command=partial(self.set_image, 'task_1_a'))
         Label(self.window, text='X = ').grid(column=0, row=9, sticky=E)
         self.x = Entry(self.window, width=7)
         self.x.grid(column=1, row=9, sticky=W)
         self.task_1_1_b = Button(self.window, text='1б', command=self.count_first_b)
+        self.show_1_1_b = Button(self.window, text='Show', command=partial(self.set_image, 'task_1_b'))
 
         Label(self.window, text='mode(2): ').grid(column=0, row=10, sticky=E)
         self.mode_2 = Combobox(self.window, width=15)
@@ -57,26 +60,34 @@ class App:
         self.mode_2['values'] = ("Туда", "Обратно", "Туда-обратно")
         self.mode_2.current(0)
         self.task_1_2 = Button(self.window, text='п. 2', command=self.count_second)
+        self.show_1_2 = Button(self.window, text='Show', command=partial(self.set_image, 'task_2'))
         self.task_1_3 = Button(self.window, text='п. 3', command=self.count_third)
+        self.show_1_3 = Button(self.window, text='Show', command=partial(self.set_image, 'task_3'))
         self.task_1_4 = Button(self.window, text='п. 4', command=self.count_fourth)
+        self.show_1_4 = Button(self.window, text='Show', command=partial(self.set_image, 'task_4'))
+        Label(self.window, text='', height=1).grid(column=1, row=13)
+        self.wait_first = Label(self.window, text='', fg='red')
+        self.wait_first.grid(column=1, row=14)
 
-        Label(self.window, text='', height=4).grid(column=1, row=13)
-        Label(self.window, text='Часть 2').grid(column=1, row=14)
+        Label(self.window, text='', height=2).grid(column=1, row=15)
+        Label(self.window, text='Часть 2').grid(column=1, row=16)
         Button(self.window, text='Показать карту инфраструктурных объектов',
-               command=partial(self.set_image, "inf_objs")).grid(column=1, row=15, pady=2)
-        Label(self.window, text='N = ').grid(column=1, row=16)
+               command=partial(self.set_image, "inf_objs")).grid(column=1, row=17, pady=2)
+        Label(self.window, text='N = ').grid(column=1, row=18)
         self.n_input = Spinbox(self.window, from_=1, to=100, width=5)
-        self.n_input.grid(column=1, row=16, sticky=E)
-        Label(self.window, text='Индекс инф. объекта: ').grid(column=1, row=17)
+        self.n_input.grid(column=1, row=18, sticky=E)
+        Label(self.window, text='Индекс инф. объекта: ').grid(column=1, row=19)
         self.inf_index = Spinbox(self.window, from_=0, to=21, width=5)
-        self.inf_index.grid(column=1, row=17, sticky=E)
-        Button(self.window, text='Рассчитать', command=self.count_sp).grid(column=1, row=18)
-
-        Label(self.window, text='', height=2).grid(column=1, row=19)
-        self.progress = Progressbar(self.window, orient=HORIZONTAL, length=0, mode='determinate')
-        self.progress.grid(column=1, row=20)
+        self.inf_index.grid(column=1, row=19, sticky=E)
+        Button(self.window, text='Рассчитать', command=self.count_sp).grid(column=1, row=20)
 
         Label(self.window, text='', height=2).grid(column=1, row=21)
+        self.progress = Progressbar(self.window, orient=HORIZONTAL, length=0, mode='determinate')
+        self.progress.grid(column=1, row=22)
+        self.progress_info = Label(self.window, text='')
+        self.progress_info.grid(column=1, row=23)
+
+        Label(self.window, text='', height=2).grid(column=1, row=24)
         self.combo = Combobox(self.window, width=30)
         self.combo['values'] = (
             "Дерево кратчайших путей", "Дендрограмма",
@@ -86,18 +97,27 @@ class App:
         )
         self.combo.current(0)
         self.show_btn = Button(self.window, text='Показать', command=self.set_combo_image)
-
-        Label(self.window, text='').grid(column=1, row=24)
         self.add_recount = Button(self.window, text='Добавить пункт назначения и пересчитать',
                                   command=self.add_and_recount)
+
+    def toggle_waiting(self, on):
+        if on:
+            self.wait_first.configure(text='wait please...')
+        else:
+            self.wait_first.configure(text='')
+        self.window.update()
 
     def set_m_n_1(self):
         try:
             n_1 = int(self.n_1_input.get())
             m_1 = int(self.m_1_input.get())
+            self.toggle_waiting(True)
+            self.hide_info()
             self.mc.set_objs(n_1, m_1)
-            messagebox.showinfo('m n', len(self.mc.chosen_objs) + len(self.mc.chosen_inf_objs))
+            self.set_image('points_for_1_part')
             self.show_first_part()
+            self.toggle_waiting(False)
+            self.window.mainloop()
         except ValueError:
             messagebox.showinfo('m n', 'M|N should be numeric')
 
@@ -109,28 +129,71 @@ class App:
         self.task_1_3.grid(column=1, row=11, pady=3, sticky=E)
         self.task_1_4.grid(column=1, row=12, sticky=E)
 
+    def hide_first_part(self):
+        self.show_chosen_1.grid_forget()
+        self.task_1_1_a.grid_forget()
+        self.task_1_1_b.grid_forget()
+        self.task_1_2.grid_forget()
+        self.task_1_3.grid_forget()
+        self.task_1_4.grid_forget()
+        self.show_1_1_a.grid_forget()
+        self.show_1_1_b.grid_forget()
+        self.show_1_2.grid_forget()
+        self.show_1_3.grid_forget()
+        self.show_1_4.grid_forget()
+
     def count_first_a(self):
+        self.toggle_waiting(True)
         index = self.mode_1['values'].index(self.mode_1.get())
-        messagebox.showinfo('1a', self.modes[index])
+        res = self.mc.nearest(self.modes[index])
+        self.set_image('task_1_a')
+        self.show_1_1_a.grid(column=2, row=8, padx=1, sticky=W)
+        self.toggle_waiting(False)
+        messagebox.showinfo('1a', res)
+        self.window.mainloop()
 
     def count_first_b(self):
         index = self.mode_1['values'].index(self.mode_1.get())
         try:
             x = int(self.x.get())
-            time.sleep(3)
+            self.toggle_waiting(True)
+            res = self.mc.closer_than_x(x, self.modes[index])
+            self.set_image('task_1_b')
+            self.show_1_1_b.grid(column=2, row=9, padx=1, sticky=W)
+            self.toggle_waiting(False)
+            messagebox.showinfo('1б', res)
+            self.window.mainloop()
         except ValueError:
             messagebox.showinfo('error', 'x should be numeric')
             return
 
     def count_second(self):
+        self.toggle_waiting(True)
         index = self.mode_2['values'].index(self.mode_2.get())
-        messagebox.showinfo('mode', self.modes[index])
+        res = self.mc.min_furthest_for_inf(self.modes[index])
+        self.set_image('task_2')
+        self.show_1_2.grid(column=2, row=10, padx=1, sticky=W)
+        self.toggle_waiting(False)
+        messagebox.showinfo('2', res)
+        self.window.mainloop()
 
     def count_third(self):
-        messagebox.showinfo('3', 'hello')
+        self.toggle_waiting(True)
+        res = self.mc.closest_inf_in_summary()
+        self.set_image('task_3')
+        self.show_1_3.grid(column=2, row=11, padx=1, sticky=W)
+        self.toggle_waiting(False)
+        messagebox.showinfo('3', res)
+        self.window.mainloop()
 
     def count_fourth(self):
-        messagebox.showinfo('4', 'hello')
+        self.toggle_waiting(True)
+        res = self.mc.min_weight_tree()
+        self.set_image('task_4')
+        self.show_1_4.grid(column=2, row=12, padx=1, sticky=W)
+        self.toggle_waiting(False)
+        messagebox.showinfo('4', res)
+        self.window.mainloop()
 
     def set_image(self, name):
         self.load = Image.open("./images/{}.png".format(name))
@@ -148,6 +211,7 @@ class App:
         self.set_image(img_names[index])
 
     def count_sp(self):
+        self.hide_first_part()
         n = int(self.n_input.get())
         inf_obj_i = int(self.inf_index.get())
         self.mc.set_objs(n, 0)
@@ -164,23 +228,24 @@ class App:
         self.hide_info()
 
         start = time.time()
+        self.update_progress(0, 'saving to csv...')
         self.mc.save_chosen_objs_to_csv()
-        self.update_progress(11)
+        self.update_progress(11, 'counting tree...')
         sum_, routes_list, o_w_r = self.mc.list_to_obj_tree(self.mc.chosen_objs, self.mc.chosen_inf_obj,
                                                      filename='./csv/min_tree.csv')
-        self.update_progress(22)
+        self.update_progress(22, 'saving tree...')
         self.mc.save_tree_plot(routes_list, [self.mc.graph.nodes[routes_list[0][0]]], 'routes_to_random_inf', o_w_r)
-        self.update_progress(33)
+        self.update_progress(33, 'researching clusters...')
         clusters, history = self.mc.objs_into_clusters(1, write=True)
-        self.update_progress(44)
+        self.update_progress(44, 'creating dendrogram...')
         self.mc.dendrogram(clusters, history)
-        self.update_progress(55)
+        self.update_progress(55, 'working with 2 clusters...')
         cs_2 = self.mc.work_with_clusters(history, 2)
-        self.update_progress(70)
+        self.update_progress(70, 'working with 3 clusters...')
         cs_3 = self.mc.work_with_clusters(history, 3)
-        self.update_progress(85)
+        self.update_progress(85, 'working with 5 clusters...')
         cs_5 = self.mc.work_with_clusters(history, 5)
-        self.update_progress(100)
+        self.update_progress(100, 'done!')
 
         result = "2 centroids tree: {}\n3 centroids tree: {}\n5 centroids tree: {}\ntime: {}"\
             .format(cs_2, cs_3, cs_5, time.time() - start)
@@ -190,8 +255,9 @@ class App:
         self.show_info()
         self.window.mainloop()
 
-    def update_progress(self, val):
+    def update_progress(self, val, info):
         self.progress['value'] = val
+        self.progress_info.configure(text=info)
         self.window.update()
 
     def hide_info(self):
@@ -199,12 +265,13 @@ class App:
         self.combo.grid_forget()
         self.show_btn.grid_forget()
         self.add_recount.grid_forget()
+        self.progress_info.configure(text='')
         self.window.update()
 
     def show_info(self):
-        self.combo.grid(column=1, row=22)
-        self.show_btn.grid(column=1, row=23)
-        self.add_recount.grid(column=1, row=25)
+        self.combo.grid(column=1, row=26)
+        self.show_btn.grid(column=1, row=27)
+        self.add_recount.grid(column=1, row=28, pady=5)
         self.window.update()
 
     def start_loop(self):

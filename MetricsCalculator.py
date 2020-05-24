@@ -8,10 +8,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import csv
-import json
-import threading
-import time
-from matplotlib.lines import Line2D
+# import json
+# import threading
+# import time
+# from matplotlib.lines import Line2D
 
 from utils.utils import *
 
@@ -126,6 +126,15 @@ class MetricsCalculator():
                 for vertex in dict_nearest.keys():
                     csv_writer.writerow([str(vertex), ','.join(str(idx) for idx in dict_nearest[vertex])])
 
+        obj_annotates = [i for i in range(len(self.chosen_objs))]
+        inf_annotates = [[] for _ in range(len(self.chosen_inf_objs))]
+        obj_index = 0
+        for id_ in dict_nearest:
+            inf_index = self.chosen_inf_objs.index(dict_nearest[id_][1])
+            inf_annotates[inf_index].append(obj_index)
+            obj_index += 1
+        self.save_points_on_graph([self.chosen_objs, self.chosen_inf_objs], 'task_1_a',
+                                  annotates=[obj_annotates, inf_annotates], add_name='task_1_a_{}'.format(mode))
         return dict_nearest
 
     #1.b
@@ -153,6 +162,16 @@ class MetricsCalculator():
                 for vertex in closer_than_x.keys():
                     csv_writer.writerow([str(vertex), ','.join(str(idx) for idx in closer_than_x[vertex])])
 
+        inf_annotates = [i for i in range(len(self.chosen_inf_objs))]
+        obj_annotates = [[] for _ in range(len(self.chosen_objs))]
+        for id_ in closer_than_x:
+            obj_index = self.chosen_objs.index(id_)
+            for inf_id in closer_than_x[id_]:
+                inf_index = self.chosen_inf_objs.index(inf_id)
+                obj_annotates[obj_index].append(inf_index)
+        self.save_points_on_graph([self.chosen_objs, self.chosen_inf_objs], 'task_1_b',
+                                  annotates=[obj_annotates, inf_annotates], add_name='task_1_b_{}'.format(mode))
+
         return closer_than_x
 
     # 2
@@ -169,7 +188,10 @@ class MetricsCalculator():
         for obj in self.chosen_inf_objs:
             if min_ > max([(distances[obj][obj2], obj) for obj2 in self.chosen_objs if distances[obj][obj2] != float("inf")])[0]:
                 min_, min_id = max([(distances[obj][obj2], obj) for obj2 in self.chosen_objs if distances[obj][obj2] != float("inf")])
-        return (min_, min_id)
+
+        self.save_points_on_graph([self.chosen_objs, self.chosen_inf_objs, [min_id]], 'task_2',
+                                  add_name='task_2_{}'.format(mode))
+        return min_, min_id
 
     # 3
     def closest_inf_in_summary(self) -> tuple:
@@ -184,6 +206,7 @@ class MetricsCalculator():
             if dist < min_:
                 min_ = dist
                 min_id = obj
+        self.save_points_on_graph([self.chosen_objs, self.chosen_inf_objs, [min_id]], 'task_3')
         return min_, min_id
 
     # 4
@@ -228,8 +251,8 @@ class MetricsCalculator():
                 for vertex in dict_.keys():
                     csv_writer.writerow([str(vertex), ','.join(str(idx) for idx in dict_[vertex])])
 
-        return (min_, min_id)
-
+        self.save_points_on_graph([self.chosen_objs, self.chosen_inf_objs, [min_id]], 'task_4')
+        return min_, min_id
 
     def list_to_obj_tree(self, objs, start_obj, filename, skip_inf_dists=False, write=True):
         distances, preds = distances_fwd(self.graph.adj, [start_obj], objs, self.weights)
@@ -413,8 +436,8 @@ class MetricsCalculator():
         if objs_wt_routes is None:
             objs_wt_routes = []
         fig, ax = ox.plot.plot_graph_routes(self.graph, routes_list, show=False, close=False, node_alpha=0,
-                                            edge_color='lightgray', edge_alpha=1, edge_linewidth=0.8,
-                                            route_color='#00cc66', route_linewidth=0.8, route_alpha=1,
+                                            edge_color='lightgray', edge_alpha=1, edge_linewidth=0.6,
+                                            route_color='#00cc66', route_linewidth=0.6, route_alpha=1,
                                             orig_dest_node_size=10, orig_dest_node_color='m', orig_dest_node_alpha=1)
         for node in blue_nodes:
             try:
@@ -463,7 +486,7 @@ class MetricsCalculator():
 
     def save_clusters(self, clusters, is_show=False):
         fig, ax = ox.plot.plot_graph(self.graph, show=False, close=False, node_alpha=0,
-                                     edge_color='lightgray', edge_alpha=1, edge_linewidth=0.8)
+                                     edge_color='lightgray', edge_alpha=1, edge_linewidth=0.6)
         colors = ['#ff6666', '#66cc00', '#00cccc', '#0000ff', '#99004c']
         name = str(len(clusters)) + '_clusters'
         for i in range(len(clusters)):
@@ -482,25 +505,50 @@ class MetricsCalculator():
         self.clusters_results[amount] = sum_
         return sum_
 
-    def set_objs(self, n, m):
+    def set_objs(self, n, m=0):
         objs = []
         objs_set = set()
-        for i in range(n):
+        while len(objs) < n:
             id_ = self.objs[random.randint(0, len(self.objs) - 1)]
             if id_ not in objs_set:
                 objs.append(id_)
                 objs_set.add(id_)
         self.chosen_objs = objs
+        if m == 0:
+            return
         inf_objs_set = set()
         inf_objs = []
-        for i in range(m):
+        while len(inf_objs) < m:
             id_ = self.inf_objs[random.randint(0, len(self.inf_objs) - 1)]
             if id_ not in inf_objs_set:
                 inf_objs.append(id_)
                 inf_objs_set.add(id_)
         self.chosen_inf_objs = inf_objs
+        self.save_points_on_graph([objs, inf_objs], 'points_for_1_part')
         #Delete?
-        self.chosen_inf_obj = self.inf_objs[random.randint(0, len(self.inf_objs) - 1)]
+        # self.chosen_inf_obj = self.inf_objs[random.randint(0, len(self.inf_objs) - 1)]
+
+    def save_points_on_graph(self, points, name, annotates=None, add_name=None):
+        fig, ax = ox.plot.plot_graph(self.graph, show=False, close=False, node_alpha=0,
+                                     edge_color='lightgray', edge_alpha=1, edge_linewidth=0.6)
+        colors = ['#ff6666', '#66cc00', '#00cccc', '#0000ff', '#99004c', '#ff0001',
+                  '#a387ff', '#a6fe', '#fe4b00', '#ffff00', '#ff84fb']
+        colors_num = 0
+        for i in range(len(points)):
+            for j in range(len(points[i])):
+                node = self.graph.nodes[points[i][j]]
+                ax.scatter(node['x'], node['y'], c=colors[colors_num], s=7, zorder=10)
+                if annotates is not None:
+                    ax.annotate(xy=(node['x'], node['y']), s=str(annotates[i][j]), size=4,
+                                xytext=(node['x'] + 0.0025, node['y']))
+            colors_num += 1
+            if colors_num == len(colors):
+                colors_num = 0
+        ox.plot.save_and_show(fig, ax, save=True, show=False, filename=name,
+                              file_format='png', close=True, dpi=200, axis_off=True)
+        if add_name is not None:
+            ox.plot.save_and_show(fig, ax, save=True, show=False, filename=add_name,
+                                  file_format='png', close=True, dpi=200, axis_off=True)
 
     def add_obj(self):
         objs_set = set(self.chosen_objs)
@@ -537,24 +585,22 @@ class MetricsCalculator():
 
 
 if __name__ == "__main__":
-    print("hello world")
-    m = MetricsCalculator('./Graph_Uni_Proj/Ekb.osm')
+    # print("hello world")
+    # print(', '.join([1, 2, 3]))
+    m = MetricsCalculator('./Ekb.osm')
     m.crop_and_save_graph()
     #m.save_tree_plot([], [3754575475, 1180314607, 231270645, 175266257, 436363937,
                           #4407072625, 1491524843, 1910990205, 413897080, 280313329], 'klfmkl', [(0, 1412634107)])
-    # print(len(m.inf_objs))
-    # print(len(m.objs))
-    # print(m.closest_inf_in_summary())
-    # x = int('abc')
-    #print(m.objs)
-    #m.set_objs(10, 2)
-    m.chosen_objs = [175246547, 4043484683, 3263470212, 2425474474, 7326442638, 1474079206, 179413472, 1794198686, 711243155, 1186819977]
+
+    m.chosen_objs = [175246547, 4043484683, 3263470212, 2425474474, 7326442638]
     m.chosen_inf_objs = [4353602429, 1185494724, 456682436, 411827206]
+    # print(m.chosen_inf_objs)
     print(m.nearest(mode="fwd", csv_file=None))
-    print(m.min_furthest_for_inf("fwd"))
-    print(m.closer_than_x(10, "fwd"))
-    print(m.closest_inf_in_summary())
-    print(m.min_weight_tree(csv_file=None))
+
+    # print(m.closer_than_x(10, "fwd"))
+    # print(m.min_furthest_for_inf("fwd"))
+    # print(m.closest_inf_in_summary())
+    # print(m.min_weight_tree(csv_file=None))
 
     # hospitals = 7
     # fire_departments = 5
