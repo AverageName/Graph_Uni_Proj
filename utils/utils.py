@@ -80,6 +80,7 @@ def dijkstra(adj_list: dict, start_vertex: int, weights: Optional[dict] = None) 
 
 def nearest_list_for_list(adj_list: dict, list1: list, list2: list, weights: Optional[dict] = None) -> dict:
     nearest = {}
+    print(list1)
     for obj in list1:
         distances, _ = dijkstra(adj_list, obj, weights)
         min_ = float('inf')

@@ -550,8 +550,8 @@ if __name__ == "__main__":
     #m.set_objs(10, 2)
     m.chosen_objs = [175246547, 4043484683, 3263470212, 2425474474, 7326442638, 1474079206, 179413472, 1794198686, 711243155, 1186819977]
     m.chosen_inf_objs = [4353602429, 1185494724, 456682436, 411827206]
-    #print(m.nearest(mode="fwd", csv_file=None))
-    print(m.min_furthest_for_inf("fwd"))
+    print(m.nearest(mode="fwd", csv_file=None))
+    #print(m.min_furthest_for_inf("fwd"))
     #print(m.chosen_objs)
     #print(m.closest_inf_in_summary())
     #print(m.min_weight_tree(csv_file=None))
