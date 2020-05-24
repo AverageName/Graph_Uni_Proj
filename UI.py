@@ -32,10 +32,10 @@ class App:
 
         Label(self.window, text='Часть 1').grid(column=1, row=3)
         Label(self.window, text='M = ').grid(column=0, row=4, sticky=E)
-        self.m_1_input = Entry(self.window, width=5)
+        self.m_1_input = Spinbox(self.window, width=5, from_=1, to=10)
         self.m_1_input.grid(column=1, row=4, sticky=W)
         Label(self.window, text='N = ').grid(column=0, row=5, sticky=E)
-        self.n_1_input = Entry(self.window, width=5)
+        self.n_1_input = Spinbox(self.window, width=5, from_=1, to=100)
         self.n_1_input.grid(column=1, row=5, sticky=W)
 
         Button(self.window, text='Выбрать', command=self.set_m_n_1).grid(column=1, row=6, sticky=W, pady=1)
@@ -93,9 +93,10 @@ class App:
 
     def set_m_n_1(self):
         try:
-            self.n_1 = int(self.n_1_input.get())
-            self.m_1 = int(self.m_1_input.get())
-            messagebox.showinfo('m n', self.m_1 + self.n_1)
+            n_1 = int(self.n_1_input.get())
+            m_1 = int(self.m_1_input.get())
+            self.mc.set_objs(n_1, m_1)
+            messagebox.showinfo('m n', len(self.mc.chosen_objs) + len(self.mc.chosen_inf_objs))
             self.show_first_part()
         except ValueError:
             messagebox.showinfo('m n', 'M|N should be numeric')
