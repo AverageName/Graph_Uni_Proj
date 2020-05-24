@@ -538,7 +538,7 @@ class MetricsCalculator():
 
 if __name__ == "__main__":
     print("hello world")
-    m = MetricsCalculator('./Ekb.osm')
+    m = MetricsCalculator('./Graph_Uni_Proj/Ekb.osm')
     m.crop_and_save_graph()
     #m.save_tree_plot([], [3754575475, 1180314607, 231270645, 175266257, 436363937,
                           #4407072625, 1491524843, 1910990205, 413897080, 280313329], 'klfmkl', [(0, 1412634107)])
