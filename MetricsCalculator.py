@@ -158,11 +158,11 @@ class MetricsCalculator():
     # 2
     def min_furthest_for_inf(self, mode: str) -> tuple:
         if mode == "fwd":
-            distances, _ = distances_fwd(self.graph.adj, self.chosen_objs, self.chosen_inf_objs, self.weights)
+            distances, _ = distances_fwd(self.graph.adj, self.chosen_inf_objs, self.chosen_objs, self.weights)
         elif mode == "bwd":
-            distances, _ = distances_bwd(self.graph.adj, self.chosen_objs, self.chosen_inf_objs, self.weights)
+            distances, _ = distances_bwd(self.graph.adj, self.chosen_inf_objs, self.chosen_objs, self.weights)
         elif mode == "fwd_bwd":
-            distances, _ = distances_fwd_bwd(self.graph.adj, self.chosen_objs, self.chosen_inf_objs, self.weights)
+            distances, _ = distances_fwd_bwd(self.graph.adj, self.chosen_inf_objs, self.chosen_objs, self.weights)
 
         min_ = float("inf")
         min_id = -1
@@ -547,10 +547,14 @@ if __name__ == "__main__":
     # print(m.closest_inf_in_summary())
     # x = int('abc')
     #print(m.objs)
-    m.set_objs(10, 2)
-    print(m.chosen_objs)
-    print(m.closest_inf_in_summary())
-    print(m.min_weight_tree(csv_file=None))
+    #m.set_objs(10, 2)
+    m.chosen_objs = [175246547, 4043484683, 3263470212, 2425474474, 7326442638, 1474079206, 179413472, 1794198686, 711243155, 1186819977]
+    m.chosen_inf_objs = [4353602429, 1185494724, 456682436, 411827206]
+    #print(m.nearest(mode="fwd", csv_file=None))
+    print(m.min_furthest_for_inf("fwd"))
+    #print(m.chosen_objs)
+    #print(m.closest_inf_in_summary())
+    #print(m.min_weight_tree(csv_file=None))
 
     # hospitals = 7
     # fire_departments = 5
