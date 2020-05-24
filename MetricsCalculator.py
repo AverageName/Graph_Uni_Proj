@@ -526,9 +526,12 @@ if __name__ == "__main__":
     # print(m.closest_inf_in_summary())
     # x = int('abc')
     #print(m.objs)
-    m.set_objs(10)
-    # print(m.min_weight_tree(csv_file=None))
+    m.set_objs(20)
+    print(m.nearest('fwd', 'node', csv_file=None))
+    # print(m.closer_than_x(5, 'fwd', 'node', csv_file=None))
+    print(m.min_furthest_for_inf('fwd'))
     print(m.closest_inf_in_summary())
+    print(m.min_weight_tree(csv_file=None))
 
     # hospitals = 7
     # fire_departments = 5
