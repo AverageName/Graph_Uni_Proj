@@ -5,6 +5,7 @@ from PIL import ImageTk, Image
 from functools import partial
 from MetricsCalculator import MetricsCalculator
 import time
+import sys
 
 
 class App:
@@ -99,6 +100,8 @@ class App:
         self.show_btn = Button(self.window, text='Показать', command=self.set_combo_image)
         self.add_recount = Button(self.window, text='Добавить пункт назначения и пересчитать',
                                   command=self.add_and_recount)
+
+        Button(self.window, text='exit', command=partial(sys.exit, 0)).grid(column=1, row=29, pady=10)
 
     def toggle_waiting(self, on):
         if on:
@@ -231,24 +234,36 @@ class App:
         self.update_progress(0, 'saving to csv...')
         self.mc.save_chosen_objs_to_csv()
         self.update_progress(11, 'counting tree...')
-        sum_, routes_list, o_w_r = self.mc.list_to_obj_tree(self.mc.chosen_objs, self.mc.chosen_inf_obj,
-                                                     filename='./csv/min_tree.csv')
+        sum_, weight, routes_list, o_w_r = self.mc.list_to_obj_tree(self.mc.chosen_objs, self.mc.chosen_inf_obj,
+                                                                   filename='./csv/min_tree.csv')
+        messagebox.showinfo('1', 'sum: {}\nweight: {}'.format(sum_, weight))
         self.update_progress(22, 'saving tree...')
         self.mc.save_tree_plot(routes_list, [self.mc.graph.nodes[routes_list[0][0]]], 'routes_to_random_inf', o_w_r)
+        self.set_image('routes_to_random_inf')
+
         self.update_progress(33, 'researching clusters...')
         clusters, history = self.mc.objs_into_clusters(1, write=True)
         self.update_progress(44, 'creating dendrogram...')
         self.mc.dendrogram(clusters, history)
+        self.set_image('dendrogram')
+
         self.update_progress(55, 'working with 2 clusters...')
-        cs_2 = self.mc.work_with_clusters(history, 2)
+        cs_2, w_2 = self.mc.work_with_clusters(history, 2)
+        self.set_image('2_clusters')
+
         self.update_progress(70, 'working with 3 clusters...')
-        cs_3 = self.mc.work_with_clusters(history, 3)
+        cs_3, w_3 = self.mc.work_with_clusters(history, 3)
+        self.set_image('3_clusters')
+
         self.update_progress(85, 'working with 5 clusters...')
-        cs_5 = self.mc.work_with_clusters(history, 5)
+        cs_5, w_5 = self.mc.work_with_clusters(history, 5)
+        self.set_image('5_clusters')
         self.update_progress(100, 'done!')
 
-        result = "2 centroids tree: {}\n3 centroids tree: {}\n5 centroids tree: {}\ntime: {}"\
-            .format(cs_2, cs_3, cs_5, time.time() - start)
+        result = "2 centroids tree: \n\tsum: {}\n\tweight {}\n" \
+                 "3 centroids tree: \n\tsum: {}\n\tweight {}\n" \
+                 "5 centroids tree: \n\tsum: {}\n\tweight {}\ntime: {}"\
+            .format(cs_2, w_2, cs_3, w_3, cs_5, w_5, time.time() - start)
         self.set_image('routes_to_random_inf')
         messagebox.showinfo('result', result)
 
@@ -283,3 +298,14 @@ m.crop_and_save_graph()
 
 app = App(m)
 app.start_loop()
+
+
+
+# set_ = set()
+# set_.add((1, 2))
+# set_.add((2, 3))
+# set_.add((1, 2))
+#
+# if (2, 3) not in set_:
+#     print('no')
+# print(set_)

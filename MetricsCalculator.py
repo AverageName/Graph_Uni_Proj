@@ -1,6 +1,5 @@
 import networkx as nx
 import osmnx as ox
-from functools import partial
 import xml.etree.ElementTree as ET
 import random
 import math
@@ -8,15 +7,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import csv
-# import json
-# import threading
-# import time
+import time
 from matplotlib.lines import Line2D
 
 from utils.utils import *
 
 
-class MetricsCalculator():
+class MetricsCalculator:
 
     def __init__(self, path_to_osm: str) -> None:
         self.graph = ox.core.graph_from_file(path_to_osm, simplify=False, retain_all=True)
@@ -24,7 +21,6 @@ class MetricsCalculator():
         self.root = ET.parse(path_to_osm).getroot()
         self.weights = {}
         self.nodes = []
-        self.clusters_results = {}
         self.inf_objs = [4353602429, 411827206, 469191096, 433569978, 241927948, 220628145, 475876249,
                          4346949771, 456682436, 1628030509, 4353588566, 175060062, 192073549, 4355578113,
                          4347321633, 412537658, 1412634107, 176134383, 192127240, 1185494724]
@@ -60,7 +56,7 @@ class MetricsCalculator():
     def crop_and_save_graph(self, save=False):
         if save:
             fig, ax = ox.plot_graph(self.graph, save=True, show=False, filename='Ekb_graph', file_format='png',
-                                    node_alpha=0, edge_color='b', edge_linewidth=0.7, dpi=200)
+                                    node_alpha=0, edge_color='b', edge_linewidth=0.6, dpi=200)
         ox.core.remove_isolated_nodes(self.graph)
         self.update_nodes_list()
         self.set_non_oriented_adj_list()
@@ -74,7 +70,7 @@ class MetricsCalculator():
         self.graph.remove_nodes_from(removing_nodes)
         self.update_nodes_list()
 
-        dists, _ = dijkstra(m.graph.adj, 175246547, m.weights)
+        dists, _ = dijkstra(self.graph.adj, 175246547, self.weights)
         inf_arr = []
         for id_ in dists:
             if dists[id_] == float('inf'):
@@ -88,7 +84,7 @@ class MetricsCalculator():
 
         if save:
             fig, ax = ox.plot_graph(self.graph, save=True, show=False, filename='Ekb_graph_cropped', dpi=200,
-                                    file_format='png', node_alpha=0, edge_color='b', edge_linewidth=0.7)
+                                    file_format='png', node_alpha=0, edge_color='b', edge_linewidth=0.6)
 
     def set_inf_objs(self, objs):
         min_dists = [float("inf") for _ in range(len(objs))]
@@ -113,6 +109,7 @@ class MetricsCalculator():
     # 1.a
     def nearest(self, mode: str, csv_file: str="./csv/nearest.csv") -> dict:
         # dict_nearest = self.func_dict_nearest[mode + "_" + start]()
+        start = time.time()
         if mode == "fwd":
             dict_nearest = nearest_list_for_list(self.graph.adj, self.chosen_objs, self.chosen_inf_objs, self.weights)
         elif mode == "bwd":
@@ -126,6 +123,7 @@ class MetricsCalculator():
                 csv_writer.writerow(['Vertex', 'Nearest'])
                 for vertex in dict_nearest.keys():
                     csv_writer.writerow([str(vertex), ','.join(str(idx) for idx in dict_nearest[vertex])])
+        print(time.time() - start)
 
         obj_annotates = [i for i in range(len(self.chosen_objs))]
         inf_annotates = [[] for _ in range(len(self.chosen_inf_objs))]
@@ -257,8 +255,8 @@ class MetricsCalculator():
 
     def list_to_obj_tree(self, objs, start_obj, filename, skip_inf_dists=False, write=True):
         distances, preds = distances_fwd(self.graph.adj, [start_obj], objs, self.weights)
-        # distances, pred = distances_bwd(self.graph.adj, objs, [start_obj], self.weights)
         edges = set()
+        weight = 0
         sum_ = 0
         routes_list = []
         tree_dict = {}
@@ -276,19 +274,19 @@ class MetricsCalculator():
             pred = preds[start_obj]
             curr = obj
             path_list = [curr]
-            path_len = 0
             while curr != start_obj:
                 path_list.append(pred[curr])
+                dist = distances[start_obj][curr] - distances[start_obj][pred[curr]]
                 if (curr, pred[curr]) not in edges:
                     edges.add((curr, pred[curr]))
+                    weight += dist
 
                     if pred[curr] not in tree_dict:
                         tree_dict[pred[curr]] = [curr]
                     else:
                         tree_dict[pred[curr]].append(curr)
 
-                    sum_ += (distances[start_obj][curr] - distances[start_obj][pred[curr]])
-                    path_len += distances[start_obj][curr] - distances[start_obj][pred[curr]]
+                sum_ += dist
                 curr = pred[curr]
             routes_list.append(list(reversed(path_list)))
 
@@ -299,7 +297,7 @@ class MetricsCalculator():
                 for vertex in tree_dict.keys():
                     csv_writer.writerow([str(vertex), ','.join(str(idx) for idx in tree_dict[vertex])])
 
-        return sum_, routes_list, objs_without_routes
+        return sum_, weight, routes_list, objs_without_routes
 
     def write_csv(self, filename, rows):
         csv_file = open(os.path.join('./csv', filename), 'w')
@@ -320,14 +318,10 @@ class MetricsCalculator():
             for j in range(len(objs)):
                 dists_dict[i][j] = float('inf')
 
-        distances, _ = distances_bwd(self.non_oriented_adj_list, objs, objs, self.weights)
-        for i in range(len(distances)):
-            dists = distances[objs[i]]
-            for j in range(len(dists)):
-                if i == j:
-                    continue
-                if dists[objs[j]] < dists_dict[i][j]:
-                    dists_dict[i][j] = dists_dict[j][i] = dists[objs[j]]
+        for i in range(len(objs)):
+            dists, _ = dijkstra(self.non_oriented_adj_list, objs[i], self.weights)
+            for j in range(i + 1, len(objs)):
+                dists_dict[i][j] = dists_dict[j][i] = dists[objs[j]]
 
         history = [clusters]
         for _ in range(len(objs) - 1):
@@ -371,26 +365,27 @@ class MetricsCalculator():
         return clusters, history
 
     def dendrogram(self, clusters, history):
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(4, 3), dpi=308)
         dict_ = {}
         for i in range(len(clusters[0])):
             dict_[clusters[0][i]] = i
         for i in range(1, len(history)):
             for key in dict_:
-                ax.plot([dict_[key], dict_[key]], [i - 1, i], 'b')
+                ax.plot([dict_[key], dict_[key]], [i - 1, i], c='b', linewidth=0.5)
             for j in range(len(history[i])):
                 if len(history[i][j]) != len(history[i - 1][j]):
                     x1 = dict_[history[i][j][0]]
                     x2 = dict_[history[i][j][len(history[i][j]) - 1]]
-                    ax.plot([x1, x2], [i, i], 'b')
+                    ax.plot([x1, x2], [i, i], c='b', linewidth=0.5)
                     new_ind = (x1 + x2) / 2
                     for elem in history[i][j]:
                         dict_[elem] = new_ind
                     break
-        plt.xlabel(', '.join(str(s) for s in history[-1][0]))
+        plt.title(', '.join(str(s) for s in history[-1][0]), fontdict={'fontsize': 3})
+        plt.axis(False)
         fig.savefig('images/dendrogram.png')
 
-    def work_with_centroids(self, clusters, write: bool = False):
+    def work_with_centroids(self, clusters):
         inf_obj = self.chosen_inf_obj
         objs = self.chosen_objs
         obj_centroids = []
@@ -417,21 +412,21 @@ class MetricsCalculator():
                     continue
             obj_centroids.append(centr_obj_id)
             cluster_objs = [objs[i] for i in cluster]
-            weight, routes_list, objs_wt_routes = self.list_to_obj_tree(cluster_objs, centr_obj_id,
-                                                        filename='./csv/cluster_tree_number_{}.csv'.format(number))
+            sum_, _, routes_list, objs_wt_routes = self.list_to_obj_tree(cluster_objs, centr_obj_id,
+                                                        filename='./csv/{}_clusters_tree_{}.csv'.format(len(clusters), number))
             all_routes += routes_list
             objs_without_routes += objs_wt_routes
             centroid_nodes.append(self.graph.nodes[centr_obj_id])
             number += 1
 
+        name = str(len(clusters)) + '_centroids_tree'
+        sum_, weight, routes, objs_wt_routes = self.list_to_obj_tree(obj_centroids, inf_obj, './csv/' + name + '.csv')
+        self.save_tree_plot(routes, [self.graph.nodes[inf_obj]], name, objs_wt_routes)
+
         name = str(len(clusters)) + '_clusters_trees'
         self.save_tree_plot(all_routes, centroid_nodes, name, objs_without_routes)
 
-        name = str(len(clusters)) + '_centroids_tree'
-        sum_, routes, objs_wt_routes = self.list_to_obj_tree(obj_centroids, inf_obj, './csv/' + name + '.csv')
-        self.save_tree_plot(routes, [self.graph.nodes[inf_obj]], name, objs_wt_routes)
-
-        return sum_
+        return sum_, weight
 
     def save_tree_plot(self, routes_list, blue_nodes, name, objs_wt_routes=None):
         if objs_wt_routes is None:
@@ -501,12 +496,10 @@ class MetricsCalculator():
     def work_with_clusters(self, history, amount):
         clusters = history[len(history) - amount]
         self.save_clusters(clusters)
-        sum_ = self.work_with_centroids(clusters, write=True)
-        print(str(amount) + ' clusters', clusters)
-        self.clusters_results[amount] = sum_
-        return sum_
+        sum_, weight = self.work_with_centroids(clusters)
+        return sum_, weight
 
-    def set_objs(self, n, m=0):
+    def set_objs(self, n, m=None):
         objs = []
         objs_set = set()
         while len(objs) < n:
@@ -515,7 +508,7 @@ class MetricsCalculator():
                 objs.append(id_)
                 objs_set.add(id_)
         self.chosen_objs = objs
-        if m == 0:
+        if m is None:
             return
         inf_objs_set = set()
         inf_objs = []
@@ -589,15 +582,13 @@ if __name__ == "__main__":
     m = MetricsCalculator('./Ekb.osm')
     m.crop_and_save_graph()
 
+    # start = time.time()
+    # m.save_adjacency_list('adjacency_list.csv')
+    # m.save_adjacency_matrix('adjacency_matrix.csv')
+    # print(time.time() - start)
+
     # m.chosen_objs = [175246547, 4043484683, 3263470212, 2425474474, 7326442638]
     # m.chosen_inf_objs = [4353602429, 1185494724, 456682436, 411827206]
-    # print(m.chosen_inf_objs)
-    # print(m.nearest(mode="fwd", csv_file=None))
-
-    # print(m.closer_than_x(10, "fwd"))
-    # print(m.min_furthest_for_inf("fwd"))
-    # print(m.closest_inf_in_summary())
-    # print(m.min_weight_tree(csv_file=None))
 
     # hospitals = 7
     # fire_departments = 5
