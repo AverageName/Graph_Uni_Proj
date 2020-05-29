@@ -124,6 +124,7 @@ class MetricsCalculator:
                 for vertex in dict_nearest.keys():
                     csv_writer.writerow([str(vertex), ','.join(str(idx) for idx in dict_nearest[vertex])])
         print(time.time() - start)
+        print(dict_nearest)
 
         obj_annotates = [i for i in range(len(self.chosen_objs))]
         inf_annotates = [[] for _ in range(len(self.chosen_inf_objs))]
@@ -254,6 +255,7 @@ class MetricsCalculator:
         return min_, min_id
 
     def list_to_obj_tree(self, objs, start_obj, filename, skip_inf_dists=False, write=True):
+        start = time.time()
         distances, preds = distances_fwd(self.graph.adj, [start_obj], objs, self.weights)
         edges = set()
         weight = 0
@@ -296,8 +298,9 @@ class MetricsCalculator:
                 csv_writer.writerow(['Vertex', 'Adjacent vertexes'])
                 for vertex in tree_dict.keys():
                     csv_writer.writerow([str(vertex), ','.join(str(idx) for idx in tree_dict[vertex])])
+        end = time.time() - start
 
-        return sum_, weight, routes_list, objs_without_routes
+        return sum_, weight, routes_list, objs_without_routes, end
 
     def write_csv(self, filename, rows):
         csv_file = open(os.path.join('./csv', filename), 'w')
@@ -306,6 +309,7 @@ class MetricsCalculator:
             wr.writerow(row)
 
     def objs_into_clusters(self, k, filename: str = 'clusters.csv', write: bool = False):
+        start = time.time()
         objs = self.chosen_objs
         if k > len(objs):
             return
@@ -354,6 +358,7 @@ class MetricsCalculator:
             clusters = new_clusters
             history.append(clusters)
 
+        end = time.time() - start
         if write:
             rows = [('', 'Cluster №', 'nodes')]
             for i in range(len(history) - 1, 0, -1):
@@ -362,7 +367,7 @@ class MetricsCalculator:
                     rows.append(('', str(j + 1), ','.join(str(node) for node in history[i][j])))
             self.write_csv(filename, rows)
 
-        return clusters, history
+        return clusters, history, end
 
     def dendrogram(self, clusters, history):
         fig, ax = plt.subplots(figsize=(4, 3), dpi=308)
@@ -386,6 +391,7 @@ class MetricsCalculator:
         fig.savefig('images/dendrogram.png')
 
     def work_with_centroids(self, clusters):
+        start = time.time()
         inf_obj = self.chosen_inf_obj
         objs = self.chosen_objs
         obj_centroids = []
@@ -393,6 +399,8 @@ class MetricsCalculator:
         objs_without_routes = []
         centroid_nodes = []
         number = 1
+        sum_ = 0
+        weight = 0
         for cluster in clusters:
             center_y = np.sum([self.graph.nodes[objs[i]]['y'] for i in cluster]) / len(cluster)
             center_x = np.sum([self.graph.nodes[objs[i]]['x'] for i in cluster]) / len(cluster)
@@ -412,21 +420,24 @@ class MetricsCalculator:
                     continue
             obj_centroids.append(centr_obj_id)
             cluster_objs = [objs[i] for i in cluster]
-            sum_, _, routes_list, objs_wt_routes = self.list_to_obj_tree(cluster_objs, centr_obj_id,
+            s, w, routes_list, objs_wt_routes, _ = self.list_to_obj_tree(cluster_objs, centr_obj_id,
                                                         filename='./csv/{}_clusters_tree_{}.csv'.format(len(clusters), number))
             all_routes += routes_list
             objs_without_routes += objs_wt_routes
+            sum_ += s
+            weight += w
             centroid_nodes.append(self.graph.nodes[centr_obj_id])
             number += 1
 
         name = str(len(clusters)) + '_centroids_tree'
-        sum_, weight, routes, objs_wt_routes = self.list_to_obj_tree(obj_centroids, inf_obj, './csv/' + name + '.csv')
+        sum_c, weight_c, routes, objs_wt_routes, _ = self.list_to_obj_tree(obj_centroids, inf_obj, './csv/' + name + '.csv')
+        end = time.time() - start
         self.save_tree_plot(routes, [self.graph.nodes[inf_obj]], name, objs_wt_routes)
 
         name = str(len(clusters)) + '_clusters_trees'
         self.save_tree_plot(all_routes, centroid_nodes, name, objs_without_routes)
 
-        return sum_, weight
+        return sum_, weight, sum_c, weight_c, end
 
     def save_tree_plot(self, routes_list, blue_nodes, name, objs_wt_routes=None):
         if objs_wt_routes is None:
@@ -496,8 +507,8 @@ class MetricsCalculator:
     def work_with_clusters(self, history, amount):
         clusters = history[len(history) - amount]
         self.save_clusters(clusters)
-        sum_, weight = self.work_with_centroids(clusters)
-        return sum_, weight
+        sum_, weight, sum_c, weight_c, t = self.work_with_centroids(clusters)
+        return sum_, weight, sum_c, weight_c, t
 
     def set_objs(self, n, m=None):
         objs = []
@@ -581,6 +592,8 @@ class MetricsCalculator:
 if __name__ == "__main__":
     m = MetricsCalculator('./Ekb.osm')
     m.crop_and_save_graph()
+
+    # ox.plot_graph(m.graph)
 
     # start = time.time()
     # m.save_adjacency_list('adjacency_list.csv')

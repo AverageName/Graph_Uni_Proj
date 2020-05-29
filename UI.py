@@ -116,7 +116,7 @@ class App:
             m_1 = int(self.m_1_input.get())
             self.toggle_waiting(True)
             self.hide_info()
-            self.mc.set_objs(n_1, m_1)
+            self.mc.set_objs(n_1, m=m_1)
             self.set_image('points_for_1_part')
             self.show_first_part()
             self.toggle_waiting(False)
@@ -217,7 +217,7 @@ class App:
         self.hide_first_part()
         n = int(self.n_input.get())
         inf_obj_i = int(self.inf_index.get())
-        self.mc.set_objs(n, 0)
+        self.mc.set_objs(n)
         self.mc.set_inf_obj(inf_obj_i)
         self.second_part()
 
@@ -229,41 +229,52 @@ class App:
     def second_part(self):
         self.progress.configure(length=200)
         self.hide_info()
-
+        time_wt_plot = 0
         start = time.time()
         self.update_progress(0, 'saving to csv...')
         self.mc.save_chosen_objs_to_csv()
         self.update_progress(11, 'counting tree...')
-        sum_, weight, routes_list, o_w_r = self.mc.list_to_obj_tree(self.mc.chosen_objs, self.mc.chosen_inf_obj,
+        sum_, weight, routes_list, o_w_r, t = self.mc.list_to_obj_tree(self.mc.chosen_objs, self.mc.chosen_inf_obj,
                                                                    filename='./csv/min_tree.csv')
-        messagebox.showinfo('1', 'sum: {}\nweight: {}'.format(sum_, weight))
+        time_wt_plot += t
+        # messagebox.showinfo('1', 'sum: {}\nweight: {}'.format(sum_, weight))
         self.update_progress(22, 'saving tree...')
         self.mc.save_tree_plot(routes_list, [self.mc.graph.nodes[routes_list[0][0]]], 'routes_to_random_inf', o_w_r)
         self.set_image('routes_to_random_inf')
 
         self.update_progress(33, 'researching clusters...')
-        clusters, history = self.mc.objs_into_clusters(1, write=True)
+        clusters, history, t = self.mc.objs_into_clusters(1, write=True)
+        time_wt_plot += t
         self.update_progress(44, 'creating dendrogram...')
         self.mc.dendrogram(clusters, history)
         self.set_image('dendrogram')
 
         self.update_progress(55, 'working with 2 clusters...')
-        cs_2, w_2 = self.mc.work_with_clusters(history, 2)
+        cs_2, w_2, cs_2_c, w_2_c, t = self.mc.work_with_clusters(history, 2)
+        time_wt_plot += t
         self.set_image('2_clusters')
 
         self.update_progress(70, 'working with 3 clusters...')
-        cs_3, w_3 = self.mc.work_with_clusters(history, 3)
+        cs_3, w_3, cs_3_c, w_3_c, t = self.mc.work_with_clusters(history, 3)
+        time_wt_plot += t
         self.set_image('3_clusters')
 
         self.update_progress(85, 'working with 5 clusters...')
-        cs_5, w_5 = self.mc.work_with_clusters(history, 5)
+        cs_5, w_5, cs_5_c, w_5_c, t = self.mc.work_with_clusters(history, 5)
+        time_wt_plot += t
         self.set_image('5_clusters')
         self.update_progress(100, 'done!')
 
-        result = "2 centroids tree: \n\tsum: {}\n\tweight {}\n" \
-                 "3 centroids tree: \n\tsum: {}\n\tweight {}\n" \
-                 "5 centroids tree: \n\tsum: {}\n\tweight {}\ntime: {}"\
-            .format(cs_2, w_2, cs_3, w_3, cs_5, w_5, time.time() - start)
+        result = "min weight tree: \n\tsum: {}\n\tweight {}\n" \
+                 "2 centroids tree: \n\tsum: {}\n\tweight {}\n\tcentroid_sum: {}\n\tcentroid_weight: {}\n" \
+                 "3 centroids tree: \n\tsum: {}\n\tweight {}\n\tcentroid_sum: {}\n\tcentroid_weight: {}\n" \
+                 "5 centroids tree: \n\tsum: {}\n\tweight {}\n\tcentroid_sum: {}\n\tcentroid_weight: {}\n" \
+                 "time without plotting: {}\ntime: {}"\
+            .format(sum_, weight,
+                    cs_2, w_2, cs_2_c, w_2_c,
+                    cs_3, w_3, cs_3_c, w_3_c,
+                    cs_5, w_5, cs_5_c, w_5_c,
+                    time_wt_plot, time.time() - start)
         self.set_image('routes_to_random_inf')
         messagebox.showinfo('result', result)
 
