@@ -1,6 +1,8 @@
 from heapq import heappush, heappop, heapify
 from math import radians, cos, sin, asin, sqrt
-from typing import Tuple, Optional
+from typing import Tuple, Optional, List
+import pandas as pd
+
 
 class MinHeap:
 
@@ -171,3 +173,33 @@ def distances_fwd_bwd(adj_list: dict, list1: list, list2: list, weights: Optiona
             else:
                 distances[obj].update({obj2: distances_fwd[obj][obj2] + distances_bwd[obj2][obj]})
     return (distances, preds)
+
+def convert_csv_to_adj_list(csv_path):
+    df = pd.read_csv(csv_path)
+    #print(df.head())
+    adj_list = {}
+    for idx, row in df.iterrows():
+        adj_list[idx] = {}
+        for key, value in row.iteritems():
+            key = int(key)
+            if value != 0:
+                if key not in adj_list[idx]:
+                    tmp = {0: {"length": value}}
+                    adj_list[idx][key] = tmp
+    #print(adj_list[1])
+    return adj_list
+
+
+def find_min_path(csv_path: str, start: int, end: int) -> List:
+    adj_list = convert_csv_to_adj_list(csv_path)
+    dists, preds = dijkstra(adj_list, start)
+    curr = end
+    ans = []
+    while curr != start:
+        ans.append(curr)
+        curr = preds[curr]
+    ans.append(start)
+    return [dists[end], ans[::-1]]
+
+if __name__ == "__main__":
+    print(find_min_path('./example.csv', 3, 0))
