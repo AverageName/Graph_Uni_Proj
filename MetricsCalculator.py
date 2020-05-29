@@ -386,7 +386,10 @@ class MetricsCalculator:
                     for elem in history[i][j]:
                         dict_[elem] = new_ind
                     break
-        plt.xticks(np.arange(0, len(clusters[0])), clusters[0])
+        plt.xticks(np.arange(0, len(clusters[0])), clusters[0], fontsize=3)
+        ax.margins(0.01)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
         fig.savefig('images/dendrogram.png')
 
     def work_with_centroids(self, clusters):
@@ -575,6 +578,11 @@ class MetricsCalculator:
 if __name__ == "__main__":
     m = MetricsCalculator('./Ekb.osm')
     m.crop_and_save_graph()
+
+    m.set_objs(20)
+
+    clusters, history, _ = m.objs_into_clusters(1)
+    m.dendrogram(clusters, history)
 
     # hospitals = 7
     # fire_departments = 5

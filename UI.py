@@ -6,6 +6,7 @@ from functools import partial
 from MetricsCalculator import MetricsCalculator
 import time
 import sys
+from utils.utils import find_min_path
 
 
 class App:
@@ -111,10 +112,20 @@ class App:
         Label(self.window, text='Dest:').grid(column=0, row=32, pady=1, sticky=E)
         self.dest_id = Entry(self.window, width=5)
         self.dest_id.grid(column=1, row=32, sticky=W)
-        self.count_test = Button(self.window, text='count')
+        self.count_test = Button(self.window, text='count', command=self.count_test)
         self.count_test.grid(column=1, row=33, pady=2, sticky=W)
 
         Button(self.window, text='exit', command=partial(sys.exit, 0)).grid(column=1, row=34, pady=5)
+
+    def count_test(self):
+        try:
+            start = int(self.start_id.get())
+            dest = int(self.dest_id.get())
+            res = find_min_path(self.filename.get(), start, dest)
+            messagebox.showinfo('result', 'length: {}\npath: {}'.format(res[0], res[1]))
+            self.window.mainloop()
+        except ValueError:
+            messagebox.showinfo('m n', 'M|N should be numeric')
 
     def toggle_waiting(self, on):
         if on:
@@ -322,6 +333,7 @@ m.crop_and_save_graph()
 
 app = App(m)
 app.start_loop()
+
 
 
 
