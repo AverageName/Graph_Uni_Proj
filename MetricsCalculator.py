@@ -386,8 +386,7 @@ class MetricsCalculator:
                     for elem in history[i][j]:
                         dict_[elem] = new_ind
                     break
-        plt.title(', '.join(str(s) for s in history[-1][0]), fontdict={'fontsize': 3})
-        plt.axis(False)
+        plt.xticks(np.arange(0, len(clusters[0])), clusters[0])
         fig.savefig('images/dendrogram.png')
 
     def work_with_centroids(self, clusters):
@@ -395,6 +394,7 @@ class MetricsCalculator:
         inf_obj = self.chosen_inf_obj
         objs = self.chosen_objs
         obj_centroids = []
+
         all_routes = []
         objs_without_routes = []
         centroid_nodes = []
@@ -404,20 +404,7 @@ class MetricsCalculator:
         for cluster in clusters:
             center_y = np.sum([self.graph.nodes[objs[i]]['y'] for i in cluster]) / len(cluster)
             center_x = np.sum([self.graph.nodes[objs[i]]['x'] for i in cluster]) / len(cluster)
-
-            min_dist = float('inf')
-            centr_obj_id = -1
-            for id_ in self.nodes:
-                try:
-                    y = self.graph.nodes[id_]['y']
-                    x = self.graph.nodes[id_]['x']
-                    cos = math.sin(y) * math.sin(center_y) + math.cos(y) * math.cos(center_y) * math.cos(x - center_x)
-                    dist = math.acos(cos) * 6371
-                    if dist < min_dist:
-                        min_dist = dist
-                        centr_obj_id = id_
-                except:
-                    continue
+            centr_obj_id = ox.get_nearest_node(self.graph, (center_y, center_x), method='haversine')
             obj_centroids.append(centr_obj_id)
             cluster_objs = [objs[i] for i in cluster]
             s, w, routes_list, objs_wt_routes, _ = self.list_to_obj_tree(cluster_objs, centr_obj_id,
@@ -461,7 +448,6 @@ class MetricsCalculator:
 
         for i in range(len(routes_list)):
             node = self.graph.nodes[routes_list[i][-1]]
-            text = ''
             try:
                 text = str(self.chosen_objs.index(node['osmid']))
             except:
@@ -530,8 +516,6 @@ class MetricsCalculator:
                 inf_objs_set.add(id_)
         self.chosen_inf_objs = inf_objs
         self.save_points_on_graph([objs, inf_objs], 'points_for_1_part')
-        #Delete?
-        # self.chosen_inf_obj = self.inf_objs[random.randint(0, len(self.inf_objs) - 1)]
 
     def save_points_on_graph(self, points, name, annotates=None, add_name=None):
         fig, ax = ox.plot.plot_graph(self.graph, show=False, close=False, node_alpha=0,
@@ -585,23 +569,12 @@ class MetricsCalculator:
                 except:
                     adj_list[id_2][id_1] = self.graph.adj[id_1][id_2]
 
-        # return adj_list
         self.non_oriented_adj_list = adj_list
 
 
 if __name__ == "__main__":
     m = MetricsCalculator('./Ekb.osm')
     m.crop_and_save_graph()
-
-    # ox.plot_graph(m.graph)
-
-    # start = time.time()
-    # m.save_adjacency_list('adjacency_list.csv')
-    # m.save_adjacency_matrix('adjacency_matrix.csv')
-    # print(time.time() - start)
-
-    # m.chosen_objs = [175246547, 4043484683, 3263470212, 2425474474, 7326442638]
-    # m.chosen_inf_objs = [4353602429, 1185494724, 456682436, 411827206]
 
     # hospitals = 7
     # fire_departments = 5

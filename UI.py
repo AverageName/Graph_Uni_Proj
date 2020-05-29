@@ -101,7 +101,20 @@ class App:
         self.add_recount = Button(self.window, text='Добавить пункт назначения и пересчитать',
                                   command=self.add_and_recount)
 
-        Button(self.window, text='exit', command=partial(sys.exit, 0)).grid(column=1, row=29, pady=10)
+        Label(self.window, text='Test').grid(column=1, row=29, pady=3, sticky=W)
+        Label(self.window, text='File:').grid(column=0, row=30, pady=1, sticky=E)
+        self.filename = Entry(self.window, width=15)
+        self.filename.grid(column=1, row=30, sticky=W)
+        Label(self.window, text='Start:').grid(column=0, row=31, pady=1, sticky=E)
+        self.start_id = Entry(self.window, width=5)
+        self.start_id.grid(column=1, row=31, sticky=W)
+        Label(self.window, text='Dest:').grid(column=0, row=32, pady=1, sticky=E)
+        self.dest_id = Entry(self.window, width=5)
+        self.dest_id.grid(column=1, row=32, sticky=W)
+        self.count_test = Button(self.window, text='count')
+        self.count_test.grid(column=1, row=33, pady=2, sticky=W)
+
+        Button(self.window, text='exit', command=partial(sys.exit, 0)).grid(column=1, row=34, pady=5)
 
     def toggle_waiting(self, on):
         if on:
