@@ -121,11 +121,12 @@ class App:
         try:
             start = int(self.start_id.get())
             dest = int(self.dest_id.get())
-            res = find_min_path(self.filename.get(), start, dest)
+            file = './{}.csv'.format(self.filename.get())
+            res = find_min_path(file, start, dest)
             messagebox.showinfo('result', 'length: {}\npath: {}'.format(res[0], res[1]))
             self.window.mainloop()
         except ValueError:
-            messagebox.showinfo('m n', 'M|N should be numeric')
+            messagebox.showinfo('error', 'check your input')
 
     def toggle_waiting(self, on):
         if on:
