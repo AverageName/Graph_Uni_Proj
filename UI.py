@@ -122,6 +122,7 @@ class App:
             start = int(self.start_id.get())
             dest = int(self.dest_id.get())
             file = './{}.csv'.format(self.filename.get())
+            print(file)
             res = find_min_path(file, start, dest)
             messagebox.showinfo('result', 'length: {}\npath: {}'.format(res[0], res[1]))
             self.window.mainloop()
@@ -173,11 +174,11 @@ class App:
     def count_first_a(self):
         self.toggle_waiting(True)
         index = self.mode_1['values'].index(self.mode_1.get())
-        res = self.mc.nearest(self.modes[index])
+        res, t = self.mc.nearest(self.modes[index])
         self.set_image('task_1_a')
         self.show_1_1_a.grid(column=2, row=8, padx=1, sticky=W)
         self.toggle_waiting(False)
-        messagebox.showinfo('1a', res)
+        messagebox.showinfo('1a', '{}\ntime: {}'.format(res, t))
         self.window.mainloop()
 
     def count_first_b(self):
@@ -185,11 +186,11 @@ class App:
         try:
             x = int(self.x.get())
             self.toggle_waiting(True)
-            res = self.mc.closer_than_x(x, self.modes[index])
+            res, t = self.mc.closer_than_x(x, self.modes[index])
             self.set_image('task_1_b')
             self.show_1_1_b.grid(column=2, row=9, padx=1, sticky=W)
             self.toggle_waiting(False)
-            messagebox.showinfo('1б', res)
+            messagebox.showinfo('1б', '{}\ntime: {}'.format(res, t))
             self.window.mainloop()
         except ValueError:
             messagebox.showinfo('error', 'x should be numeric')
@@ -198,29 +199,29 @@ class App:
     def count_second(self):
         self.toggle_waiting(True)
         index = self.mode_2['values'].index(self.mode_2.get())
-        res = self.mc.min_furthest_for_inf(self.modes[index])
+        min_, min_id, t = self.mc.min_furthest_for_inf(self.modes[index])
         self.set_image('task_2')
         self.show_1_2.grid(column=2, row=10, padx=1, sticky=W)
         self.toggle_waiting(False)
-        messagebox.showinfo('2', res)
+        messagebox.showinfo('2', '{}\ntime: {}'.format(min_, t))
         self.window.mainloop()
 
     def count_third(self):
         self.toggle_waiting(True)
-        res = self.mc.closest_inf_in_summary()
+        min_, min_id, t = self.mc.closest_inf_in_summary()
         self.set_image('task_3')
         self.show_1_3.grid(column=2, row=11, padx=1, sticky=W)
         self.toggle_waiting(False)
-        messagebox.showinfo('3', res)
+        messagebox.showinfo('3', '{}\ntime: {}'.format(min_, t))
         self.window.mainloop()
 
     def count_fourth(self):
         self.toggle_waiting(True)
-        res = self.mc.min_weight_tree()
+        min_, min_id, t = self.mc.min_weight_tree()
         self.set_image('task_4')
         self.show_1_4.grid(column=2, row=12, padx=1, sticky=W)
         self.toggle_waiting(False)
-        messagebox.showinfo('4', res)
+        messagebox.showinfo('4', '{}\ntime: {}'.format(min_, t))
         self.window.mainloop()
 
     def set_image(self, name):
@@ -259,9 +260,9 @@ class App:
         self.update_progress(0, 'saving to csv...')
         self.mc.save_chosen_objs_to_csv()
         self.update_progress(11, 'counting tree...')
-        sum_, weight, routes_list, o_w_r, t = self.mc.list_to_obj_tree(self.mc.chosen_objs, self.mc.chosen_inf_obj,
+        sum_, weight, routes_list, o_w_r, tree_time = self.mc.list_to_obj_tree(self.mc.chosen_objs, self.mc.chosen_inf_obj,
                                                                    filename='./csv/min_tree.csv')
-        time_wt_plot += t
+        time_wt_plot += tree_time
         # messagebox.showinfo('1', 'sum: {}\nweight: {}'.format(sum_, weight))
         self.update_progress(22, 'saving tree...')
         self.mc.save_tree_plot(routes_list, [self.mc.graph.nodes[routes_list[0][0]]], 'routes_to_random_inf', o_w_r)
@@ -294,12 +295,12 @@ class App:
                  "2 centroids tree: \n\tsum: {}\n\tweight {}\n\tcentroid_sum: {}\n\tcentroid_weight: {}\n" \
                  "3 centroids tree: \n\tsum: {}\n\tweight {}\n\tcentroid_sum: {}\n\tcentroid_weight: {}\n" \
                  "5 centroids tree: \n\tsum: {}\n\tweight {}\n\tcentroid_sum: {}\n\tcentroid_weight: {}\n" \
-                 "time without plotting: {}\ntime: {}"\
+                 "tree time: {}\ntime without plotting: {}\ntime: {}"\
             .format(sum_, weight,
                     cs_2, w_2, cs_2_c, w_2_c,
                     cs_3, w_3, cs_3_c, w_3_c,
                     cs_5, w_5, cs_5_c, w_5_c,
-                    time_wt_plot, time.time() - start)
+                    tree_time, time_wt_plot, time.time() - start)
         self.set_image('routes_to_random_inf')
         messagebox.showinfo('result', result)
 

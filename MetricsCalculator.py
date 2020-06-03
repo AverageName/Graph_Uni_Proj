@@ -107,15 +107,17 @@ class MetricsCalculator:
         self.nodes = list(self.graph.nodes.keys())
 
     # 1.a
-    def nearest(self, mode: str, csv_file: str="./csv/nearest.csv") -> dict:
+    def nearest(self, mode: str, csv_file: str="./csv/nearest.csv"):
         # dict_nearest = self.func_dict_nearest[mode + "_" + start]()
         start = time.time()
+        dict_nearest = {}
         if mode == "fwd":
             dict_nearest = nearest_list_for_list(self.graph.adj, self.chosen_objs, self.chosen_inf_objs, self.weights)
         elif mode == "bwd":
             dict_nearest = nearest_bwd_list_for_list(self.graph.adj, self.chosen_objs, self.chosen_inf_objs, self.weights)
         elif mode == "fwd_bwd":
             dict_nearest = nearest_fwd_bwd_list_for_list(self.graph.adj, self.chosen_objs, self.chosen_inf_objs, self.weights)
+        t = time.time() - start
 
         if csv_file is not None:
             with open(csv_file, 'w') as f:
@@ -123,8 +125,8 @@ class MetricsCalculator:
                 csv_writer.writerow(['Vertex', 'Nearest'])
                 for vertex in dict_nearest.keys():
                     csv_writer.writerow([str(vertex), ','.join(str(idx) for idx in dict_nearest[vertex])])
-        print(time.time() - start)
-        print(dict_nearest)
+        # print(time.time() - start)
+        # print(dict_nearest)
 
         obj_annotates = [i for i in range(len(self.chosen_objs))]
         inf_annotates = [[] for _ in range(len(self.chosen_inf_objs))]
@@ -135,11 +137,13 @@ class MetricsCalculator:
             obj_index += 1
         self.save_points_on_graph([self.chosen_objs, self.chosen_inf_objs], 'task_1_a',
                                   annotates=[obj_annotates, inf_annotates], add_name='task_1_a_{}'.format(mode))
-        return dict_nearest
+        return dict_nearest, t
 
     #1.b
-    def closer_than_x(self, distance: int, mode: str, csv_file: str="./csv/closer_than_x.csv") -> dict:
+    def closer_than_x(self, distance: int, mode: str, csv_file: str="./csv/closer_than_x.csv"):
+        start = time.time()
         closer_than_x = {}
+        distances = None
         if mode == "fwd":
             distances, _ = distances_fwd(self.graph.adj, self.chosen_objs, self.chosen_inf_objs, self.weights)
         elif mode == "bwd":
@@ -154,6 +158,7 @@ class MetricsCalculator:
                         closer_than_x[obj] = [obj2]
                     else:
                         closer_than_x[obj].append(obj2)
+        t = time.time() - start
 
         if csv_file is not None:
             with open(csv_file, 'w') as f:
@@ -172,10 +177,12 @@ class MetricsCalculator:
         self.save_points_on_graph([self.chosen_objs, self.chosen_inf_objs], 'task_1_b',
                                   annotates=[obj_annotates, inf_annotates], add_name='task_1_b_{}'.format(mode))
 
-        return closer_than_x
+        return closer_than_x, t
 
     # 2
-    def min_furthest_for_inf(self, mode: str) -> tuple:
+    def min_furthest_for_inf(self, mode: str):
+        start = time.time()
+        distances = None
         if mode == "fwd":
             distances, _ = distances_fwd(self.graph.adj, self.chosen_inf_objs, self.chosen_objs, self.weights)
         elif mode == "bwd":
@@ -188,13 +195,14 @@ class MetricsCalculator:
         for obj in self.chosen_inf_objs:
             if min_ > max([(distances[obj][obj2], obj) for obj2 in self.chosen_objs if distances[obj][obj2] != float("inf")])[0]:
                 min_, min_id = max([(distances[obj][obj2], obj) for obj2 in self.chosen_objs if distances[obj][obj2] != float("inf")])
-
+        t = time.time() - start
         self.save_points_on_graph([self.chosen_objs, self.chosen_inf_objs, [min_id]], 'task_2',
                                   add_name='task_2_{}'.format(mode))
-        return min_, min_id
+        return min_, min_id, t
 
     # 3
-    def closest_inf_in_summary(self) -> tuple:
+    def closest_inf_in_summary(self):
+        start = time.time()
         distances, _ = distances_fwd(self.graph.adj, self.chosen_inf_objs, self.chosen_objs, self.weights)
         min_ = float("inf")
         min_id = -1
@@ -206,11 +214,13 @@ class MetricsCalculator:
             if dist < min_:
                 min_ = dist
                 min_id = obj
+        t = time.time() - start
         self.save_points_on_graph([self.chosen_objs, self.chosen_inf_objs, [min_id]], 'task_3')
-        return min_, min_id
+        return min_, min_id, t
 
     # 4
-    def min_weight_tree(self, csv_file: str="./csv/tree_of_min_weight_paths.csv") -> tuple:
+    def min_weight_tree(self, csv_file: str="./csv/tree_of_min_weight_paths.csv"):
+        start = time.time()
         distances, preds = distances_fwd(self.graph.adj, self.chosen_inf_objs, self.chosen_objs, self.weights)
         min_ = float("inf")
         min_id = -1
@@ -243,7 +253,7 @@ class MetricsCalculator:
                 dict_[pair[0]].append(pair[1])
             else:
                 dict_[pair[0]] = [pair[1]]
-
+        t = time.time() - start
         if csv_file is not None:
             with open(csv_file, 'w') as f:
                 csv_writer = csv.writer(f, delimiter='\t')
@@ -252,7 +262,7 @@ class MetricsCalculator:
                     csv_writer.writerow([str(vertex), ','.join(str(idx) for idx in dict_[vertex])])
 
         self.save_points_on_graph([self.chosen_objs, self.chosen_inf_objs, [min_id]], 'task_4')
-        return min_, min_id
+        return min_, min_id, t
 
     def list_to_obj_tree(self, objs, start_obj, filename, skip_inf_dists=False, write=True):
         start = time.time()
@@ -579,10 +589,15 @@ if __name__ == "__main__":
     m = MetricsCalculator('./Ekb.osm')
     m.crop_and_save_graph()
 
-    m.set_objs(20)
+    # m.set_objs(5000)
+    # m.set_inf_obj(0)
+    #
+    # start = time.time()
+    # sum_, weight, routes_list, o_w_r, t = m.list_to_obj_tree(m.chosen_objs, m.chosen_inf_obj, '', write=False)
+    # print(time.time() - start)
 
-    clusters, history, _ = m.objs_into_clusters(1)
-    m.dendrogram(clusters, history)
+    # clusters, history, _ = m.objs_into_clusters(1)
+    # m.dendrogram(clusters, history)
 
     # hospitals = 7
     # fire_departments = 5
