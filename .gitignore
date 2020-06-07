@@ -6,3 +6,5 @@ venv/
 *.png
 *.csv
 utils/__pycache__/
+csv/adjacency_matrix.csv
+.ipynb_checkpoints
