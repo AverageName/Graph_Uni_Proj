@@ -1,6 +1,9 @@
 from heapq import heappush, heappop, heapify
 from math import radians, cos, sin, asin, sqrt
-from typing import Tuple, Optional
+from typing import Tuple, Optional, List
+import pandas as pd
+import time
+
 
 class MinHeap:
 
@@ -134,7 +137,7 @@ def distances_fwd(adj_list: dict, list1: list, list2: list, weights: Optional[di
     preds = {}
     for obj in list1:
         distances[obj], preds[obj] = dijkstra(adj_list, obj, weights)
-    return (distances, preds)
+    return distances, preds
 
 
 def distances_bwd(adj_list: dict, list1: list, list2: list, weights: Optional[dict] = None) -> Tuple[dict]:
@@ -171,3 +174,39 @@ def distances_fwd_bwd(adj_list: dict, list1: list, list2: list, weights: Optiona
             else:
                 distances[obj].update({obj2: distances_fwd[obj][obj2] + distances_bwd[obj2][obj]})
     return (distances, preds)
+
+
+def convert_csv_to_adj_list(csv_path):
+    df = pd.read_csv(csv_path)
+    adj_list = {}
+    for idx, row in df.iterrows():
+        adj_list[idx] = {}
+        for key, value in row.iteritems():
+            key = int(key)
+            if value != 0:
+                if key not in adj_list[idx]:
+                    tmp = {0: {"length": value}}
+                    adj_list[idx][key] = tmp
+    return adj_list
+
+
+def find_min_path(csv_path: str, start: int, end: int) -> List:
+    adj_list = convert_csv_to_adj_list(csv_path)
+    start_t = time.time()
+    dists, preds = dijkstra(adj_list, start)
+    print('dijkstra time: ', time.time() - start_t)
+    print(dists)
+    curr = end
+    ans = []
+    if dists[end] != float("inf"):
+        while curr != start:
+            ans.append(curr)
+            curr = preds[curr]
+        ans.append(start)
+    return [dists[end], ans[::-1]]
+
+
+if __name__ == "__main__":
+    start = time.time()
+    print(find_min_path('../export_test.csv', 0, 80))
+    print('time: ', time.time() - start)
